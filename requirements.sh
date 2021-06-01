@@ -22,7 +22,7 @@
 
 set -e
 sudo apt install -y wget p7zip
-sudo add-apt-repository ppa:gijzelaar/snap7
+sudo add-apt-repository -y ppa:gijzelaar/snap7
 sudo apt-get update
 sudo apt-get install -y libsnap7-1 libsnap7-dev
 
