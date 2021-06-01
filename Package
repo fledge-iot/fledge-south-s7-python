@@ -1,6 +1,6 @@
 # A set of variables that define how we package this repository
 #
-plugin_name=modbustcp
+plugin_name=s7_python
 plugin_type=south
 plugin_install_dirname=${plugin_name}
 
