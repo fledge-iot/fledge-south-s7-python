@@ -44,13 +44,13 @@ from fledge.services.south import exceptions
     As an example of how to use this library:
 
         import snap7
-        
+
         client = snap7.client.Client()
         client.connect("127.0.0.1", 0, 0, 1012)
         client.get_connected()
 
         data = client.db_read(1, 0, 4)
-        
+
         print(data)
         ???client.close()
 
@@ -65,24 +65,24 @@ __version__ = "${VERSION}"
 """ _DEFAULT_CONFIG with S7 Entities Map
 
     The coils and registers each have a read-only table and read-write table.
-    
+
         Coil	Read-write	1 bit
         Discrete input	Read-only	1 bit
         Input register	Read-only	16 bits
-        Holding register	Read-write	16 bits 
+        Holding register	Read-write	16 bits
 """
 
 _DEFAULT_CONFIG = {
     'plugin': {
         'description': 'Siemens S7 TCP South Service Plugin',
         'type': 'string',
-        'default': 's7',
+        'default': 's7_python',
         'readonly': 'true'
     },
     'assetName': {
         'description': 'Asset name',
         'type': 'string',
-        'default': 'S7 TCP',
+        'default': 'S7',
         'order': "1",
         'displayName': 'Asset Name',
         'mandatory': 'true'
@@ -129,9 +129,7 @@ _DEFAULT_CONFIG = {
                     "262.0": {"name": "TESTVAR_Int",     "type": "Int"},
                     "264.0": {"name": "TESTVAR_DWord",   "type": "DWord"},
                     "268.0": {"name": "TESTVAR_DInt",    "type": "DInt"},
-                    "272.0": {"name": "TESTVAR_Real",    "type": "Real"},
-                    "276.0": {"name": "TESTVAR_String",  "type": "String"},
-                    "532.0": {"name": "TESTVAR_ChArray", "type": "Char[10]"}
+                    "272.0": {"name": "TESTVAR_Real",    "type": "Real"}
                 }
             }
         }),
@@ -160,7 +158,7 @@ def plugin_info():
     """
 
     return {
-        'name': 's7',
+        'name': 's7_south_python',
         'version': '1.9.1',
         'mode': 'poll',
         'type': 'south',
@@ -198,7 +196,7 @@ def plugin_poll(handle):
         global client
         if client is None:
             try:
-                address = handle['host']['value']
+                host = handle['host']['value']
                 port = int(handle['port']['value'])
                 rack = int(handle['rack']['value'])
                 slot = int(handle['slot']['value'])
@@ -208,7 +206,11 @@ def plugin_poll(handle):
                 raise ValueError(e_msg)
             try:
                 client = snap7.client.Client()
-                client_connected = client.connect(host, rack, slot, port)
+                client.connect('192.168.1.1', 0, 0)
+
+                #client_connected = client.connect(host, rack, slot, port)
+                #client.connect(host, rack, slot)
+                client_connected = client.get_connected()
                 if client_connected:
                     _LOGGER.info('S7 TCP Client is connected. %s:%d', host, port)
                 else:
@@ -223,24 +225,7 @@ def plugin_poll(handle):
 
         readings = {}
 
-        
 
-        offsets = { "Bool":1,"Int": 2,"Real":4,"Time":4,"DInt":4,"UDInt":4}
-        
-        
-        db = s7_map['DB']
-        if len(db) > 0:
-            for dbnumber, variable in db.items():
-                if len(variable) > 0:
-                    for name, item in variable.items():
-                        print(int(dbnumber), str(name), int(item['address']), int(str(item['address']).split('.')[1]), offsets.get(str(item['type'])))  
-                        #data = ReadDB(client, int(dbnumber), int(item['address']), S7WLReal) 
-                        
-                        if data is None:
-                            #_LOGGER.error
-                            print('Failed to read DB: %s name: %s  address: %f', dbnumber, name, float(item['address']))
-                        else:
-                            readings.update({name: data }) 
 
         wrapper = {
             'asset': handle['assetName']['value'],
@@ -274,7 +259,7 @@ def plugin_reconfigure(handle, new_config):
     diff = utils.get_diff(handle, new_config)
 
     # TODO
-    if 'address' in diff or 'port' in diff:
+    if 'host' in diff or 'port' in diff:
         plugin_shutdown(handle)
         new_handle = plugin_init(new_config)
         _LOGGER.info("Restarting S7 TCP plugin due to change in configuration keys [{}]".format(', '.join(diff)))

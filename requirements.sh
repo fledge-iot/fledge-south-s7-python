@@ -21,9 +21,34 @@
 ##
 
 set -e
-sudo apt install -y wget p7zip
-sudo add-apt-repository -y ppa:gijzelaar/snap7
-sudo apt-get update
-sudo apt-get install -y libsnap7-1 libsnap7-dev
 
-#wget --content-disposition -c https://sourceforge.net/projects/snap7/files/1.4.2/snap7-full-1.4.2.7z/download
+os_name=`(grep -o '^NAME=.*' /etc/os-release | cut -f2 -d\" | sed 's/"//g')`
+os_version=`(grep -o '^VERSION_ID=.*' /etc/os-release | cut -f2 -d\" | sed 's/"//g')`
+echo "Platform is ${os_name}, Version: ${os_version}"
+
+echo Installing requirements
+if [[ ( $os_name == *"Red Hat"* || $os_name == *"CentOS"* ) &&  $os_version == *"7"* ]]; then
+	sudo yum install -y wget
+	# TODO never tested
+	sudo yum install -y p7zip
+	wget --content-disposition -c https://sourceforge.net/projects/snap7/files/1.4.2/snap7-full-1.4.2.7z/download
+	p7zip -d snap7-full-1.4.2.7z
+	cd snap7-full-1.4.2/build/unix
+	# TODO if 64bit  
+	make -f "$(uname -m)_linux.mk" install	LibInstall=/usr/lib64
+	
+elif apt --version 2>/dev/null; then
+	#sudo apt install -y software-properties-common
+	#sudo add-apt-repository -y ppa:gijzelaar/snap7
+	#sudo apt update
+	#sudo apt-get install -y libsnap7-1 libsnap7-dev
+	
+	sudo apt install -y wget
+	sudo apt install -y p7zip
+	wget --content-disposition -c https://sourceforge.net/projects/snap7/files/1.4.2/snap7-full-1.4.2.7z/download
+	p7zip -d snap7-full-1.4.2.7z
+	cd snap7-full-1.4.2/build/unix
+	make -f "$(uname -m)_linux.mk" install	
+else
+	echo "Requirements cannot be automatically installed, please refer README.rst to install requirements manually"
+fi
