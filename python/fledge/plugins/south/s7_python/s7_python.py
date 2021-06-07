@@ -22,6 +22,7 @@
 import copy
 import json
 import logging
+import re
 
 import snap7
 from snap7.util import *
@@ -121,15 +122,16 @@ _DEFAULT_CONFIG = {
         'default': json.dumps({
             "DB": {
                 "788": {
-                    "0.0":   {"name": "Job",             "type": "String[255]"},
-                    "256.0": {"name": "Count",           "type": "UInt"},
-                    "258.0": {"name": "Active",          "type": "Bool"},
-                    "258.1": {"name": "TESTVAR_Bits",    "type": "Bool"},
-                    "260.0": {"name": "TESTVAR_Word",    "type": "Word"},
-                    "262.0": {"name": "TESTVAR_Int",     "type": "Int"},
-                    "264.0": {"name": "TESTVAR_DWord",   "type": "DWord"},
-                    "268.0": {"name": "TESTVAR_DInt",    "type": "DInt"},
-                    "272.0": {"name": "TESTVAR_Real",    "type": "Real"}
+                    "0.0":   {"name": "Job",             "type": "String[254]"},
+                    "256.0": {"name": "Count",           "type": "UINT"},
+                    "258.0": {"name": "Active",          "type": "BOOL"},
+                    "258.1": {"name": "TESTVAR_Bits",    "type": "BOOL"},
+                    "260.0": {"name": "TESTVAR_Word",    "type": "WORD"},
+                    "262.0": {"name": "TESTVAR_Int",     "type": "INT"},
+                    "264.0": {"name": "TESTVAR_DWord",   "type": "DWORD"},
+                    "268.0": {"name": "TESTVAR_DInt",    "type": "DINT"},
+                    "272.0": {"name": "TESTVAR_Real",    "type": "REAL"}#,
+                    #"276.0": {"name": "TESTVAR_String",  "type": "STRING"}
                 }
             }
         }),
@@ -223,9 +225,41 @@ def plugin_poll(handle):
         unit_id = UNIT
         s7_map = json.loads(handle['map']['value'])
 
-        readings = {}
+        readings = {"TESTVAR_Real": 0.0}
+        
+        #buffer_ = client.read_area(snap7.types.areas.DB, 788, 272, 4)
+        #data = get_value(buffer_,0 , "REAL")
+
+        #readings.update({"TESTVAR_Real": data })
+
+        db = s7_map['DB']
+
+        if len(db.keys()) > 0:
+            for dbnumber, variable in db.items():
+                if len(variable.keys()) > 0:
+                    a = []
+                    for index, item in variable.items():
+                        byte_index = int(index.split('.')[0])
+                        a.append([byte_index, byte_index + get_type_size(item['type']) - 1])
+
+                    for start, end in union_range(a):
+                        size = end - start + 1
+                        _LOGGER.warn("DEBUG: dbnumber: %s start: %s, end: %s, size: %s", str(dbnumber), str(start), str(end), str(size))
+                        buffer_ = client.read_area(snap7.types.areas.DB, int(dbnumber), start, size)
+
+                        for index, item in variable.items():
+                            byte_index = int(index.split('.')[0])
+                            if start <= byte_index and byte_index <= end:
+                                _LOGGER.warn("DEBUG: start: %s, type: %s", str(float(index) - start), item['type'])
+                                data = get_value(buffer_, float(index) - start, item['type'])
+
+                                if data is None:
+                                    _LOGGER.error('Failed to read DB: %s index: %s name: %s', str(dbnumber), str(index), str(item['name']))
+                                else:
+                                    readings.update({"DB" + dbnumber + "_" + item['name']: data })
 
 
+        _LOGGER.warn('DEBUG OUT='+ str(readings))
 
         wrapper = {
             'asset': handle['assetName']['value'],
@@ -291,3 +325,167 @@ def plugin_shutdown(handle):
     else:
         client = None
         _LOGGER.info('S7 TCP plugin shut down.')
+
+def get_value(bytearray_, byte_index, type_):
+    """ Gets the value for a specific type.
+    Args:
+        byte_index: byte index from where start reading.
+        type_: type of data to read.
+    Raises:
+        :obj:`ValueError`: if the `type_` is not handled.
+    Returns:
+        Value read according to the `type_`
+    """
+
+    type_ = type_.strip().upper()
+
+    if type_ == 'BOOL':
+        byte_index, bool_index = str(byte_index).split('.')
+        return get_bool(bytearray_, int(float(byte_index)), int(bool_index))
+
+
+    byte_index = int(float(byte_index))
+
+    if type_.startswith('STRING'):
+        max_size = re.search(r'\d+', type_)
+        #(\d+\.\.)?(\d+)    0..9
+        if max_size is None:
+            pass
+           #raise Snap7Exception("Max size could not be determinate. re.search() returned None")
+        max_size_grouped = max_size.group(0)
+        max_size_int = int(max_size_grouped)
+        return get_string(bytearray_, byte_index, max_size_int)
+
+    elif type_ == 'REAL':
+        return get_real(bytearray_, byte_index)
+
+    elif type_ == 'DWORD':
+        return get_dword(bytearray_, byte_index)
+
+    elif type_ == 'DINT':
+        return get_dint(bytearray_, byte_index)
+
+    elif type_ == 'INT':
+        return get_int(bytearray_, byte_index)
+
+    elif type_ == 'UINT':
+            return get_uint(bytearray_, byte_index)
+
+    elif type_ == 'BYTE':
+        return get_byte(bytearray_, byte_index)
+
+    elif type_ == 'CHAR':
+        return chr(get_usint(bytearray_, byte_index))
+
+    elif type_ == 'WORD':
+        return get_word(bytearray_, byte_index)
+
+    elif type_ == 'S5TIME':
+        data_s5time = get_s5time(bytearray_, byte_index)
+        return data_s5time
+
+    elif type_ == 'DATE_AND_TIME':
+        data_dt = get_dt(bytearray_, byte_index)
+        return data_dt
+
+    elif type_ == 'USINT':
+        return get_usint(bytearray_, byte_index)
+
+    elif type_ == 'SINT':
+        return get_sint(bytearray_, byte_index)
+
+    # add these three not implemented data typ to avoid
+    # 'Unable to get repr for class<snap7.util.DB_ROW>' error
+    elif type_ == 'TIME':
+        return 'read TIME not implemented'
+
+    elif type_ == 'DATE':
+        return 'read DATE not implemented'
+
+    elif type_ == 'TIME_OF_DAY':
+        return 'read TIME_OF_DAY not implemented'
+
+    return None
+
+
+def get_type_size(type_name):
+
+    type_name = type_name.strip().upper()
+
+    type_size = { "BOOL": 1, "BYTE": 1, "CHAR": 1, "WORD": 2, "DWORD": 4, "INT": 2, "UINT": 2, "DINT":4, "SINT": 1, "USINT": 1, "REAL":4, "STRING": 256}
+
+    if type_name in type_size.keys():
+        return type_size[type_name]
+
+    type_split = type_name.split('[')
+    if  len (type_split) == 2 and "]" == type_name[-1]:
+        array_size = int(type_split[1][:-1]) # +1 because array start with 0
+
+        if type_split[0] == 'STRING':
+            return array_size + 2
+
+        if type_split[0] in type_size.keys():
+            return type_size[type_split[0]] * array_size
+
+    if  type_split[0] == 'STRING' and len (type_split) == 3 and "]" == type_name[-1]:
+        string_size = int(type_split[1][:-1]) + 2 # +1 because array start with 0
+        array_size = int(type_split[2][:-1]) # +1 because array start with 0
+        return array_size * string_size
+
+    if type_split[0] == 'STRING':
+        return array_size
+
+    raise ValueError
+
+
+def union_range(a):
+    b = []
+    for begin, end in sorted(a):
+        if b and b[-1][1] >= begin - 1:
+            b[-1][1] = max(b[-1][1], end)
+        else:
+            b.append([begin, end])
+
+    return b
+
+
+def get_uint(bytearray_: bytearray, byte_index: int) -> int:
+    """Get uint value from bytearray.
+    Notes:
+        Datatype `uint` in the PLC is represented in two bytes
+    Args:
+        bytearray_: buffer to read from.
+        byte_index: byte index to start reading from.
+    Returns:
+        Value read.
+    Examples:
+
+    """
+    data = bytearray_[byte_index:byte_index + 2]
+    data[1] = data[1] & 0xff
+    data[0] = data[0] & 0xff
+    packed = struct.pack('2B', *data)
+    value = struct.unpack('>H', packed)[0]
+    return value
+
+
+def get_udint(bytearray_: bytearray, byte_index: int) -> int:
+    """Get udint value from bytearray.
+    Notes:
+        Datatype `udint` consists in 4 bytes in the PLC.
+        Maximum possible value is 4294967295.
+        Lower posible value is 0.
+    Args:
+        bytearray_: buffer to read.
+        byte_index: byte index from where to start reading.
+    Returns:
+        Value read.
+    Examples:
+
+    """
+    data = bytearray_[byte_index:byte_index + 4]
+    # I or L ???
+    udint = struct.unpack('>L', struct.pack('4B', *data))[0]
+    return udint
+
+
