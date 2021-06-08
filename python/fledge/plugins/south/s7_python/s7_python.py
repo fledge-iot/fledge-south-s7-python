@@ -131,7 +131,27 @@ _DEFAULT_CONFIG = {
                     "264.0": {"name": "TESTVAR_DWord",   "type": "DWORD"},
                     "268.0": {"name": "TESTVAR_DInt",    "type": "DINT"},
                     "272.0": {"name": "TESTVAR_Real",    "type": "REAL"}#,
-                    #"276.0": {"name": "TESTVAR_String",  "type": "STRING"}
+                    #"276.0": {"name": "TESTVAR_String",  "type": "STRING"}#,
+                    #"532.0": {"name": "TESTVAR_ChArray", "type": "Char[11]"}
+                },            
+                "789": {
+                    "1288.0": {"name": "Max_Usint", "type": "USInt"},
+                    "1290.0": {"name": "Max_UInt", "type": "UInt"},
+                    "1292.0": {"name": "Max_ULInt", "type": "ULInt"},
+                    "1300.0": {"name": "Min_SInt", "type": "SInt"},
+                    "1301.0": {"name": "Max_SInt", "type": "SInt"},
+                    "1302.0": {"name": "Min_Int", "type": "Int"},
+                    "1304.0": {"name": "Max_Int", "type": "Int"},
+                    "1306.0": {"name": "Min_DInt", "type": "DInt"},
+                    "1310.0": {"name": "Max_DInt", "type": "DInt"},
+                    "1314.0": {"name": "Min_LInt", "type": "LInt"},
+                    "1322.0": {"name": "Max_LInt", "type": "LInt"},
+                    "1330.0": {"name": "Min_Real", "type": "Real"},
+                    "1334.0": {"name": "Max_Real", "type": "Real"},
+                    "1338.0": {"name": "Min_LReal", "type": "LReal"},
+                    "1346.0": {"name": "Max_LReal", "type": "LReal"},
+                    "1354.0": {"name": "Min_Date", "type": "Date_And_Time"},
+                    "1362.0": {"name": "Max_Date", "type": "Date_And_Time"}
                 }
             }
         }),
@@ -224,15 +244,10 @@ def plugin_poll(handle):
 
         unit_id = UNIT
         s7_map = json.loads(handle['map']['value'])
-
-        readings = {"TESTVAR_Real": 0.0}
         
-        #buffer_ = client.read_area(snap7.types.areas.DB, 788, 272, 4)
-        #data = get_value(buffer_,0 , "REAL")
-
-        #readings.update({"TESTVAR_Real": data })
-
         db = s7_map['DB']
+
+        readings = {}
 
         if len(db.keys()) > 0:
             for dbnumber, variable in db.items():
@@ -326,6 +341,125 @@ def plugin_shutdown(handle):
         client = None
         _LOGGER.info('S7 TCP plugin shut down.')
 
+
+def union_range(a):
+    b = []
+    for begin, end in sorted(a):
+        if b and b[-1][1] >= begin - 1:
+            b[-1][1] = max(b[-1][1], end)
+        else:
+            b.append([begin, end])
+
+    return b
+
+
+def get_lreal(bytearray_: bytearray, byte_index: int) -> float:
+    """Get real value.
+    Notes:
+        Datatype `LReal` is represented in 8 bytes in the PLC..
+        Maximum possible value is 2.2250738585072014E-308.
+        Lower posible value is -1.7976931348623157E+308
+    Args:
+        bytearray_: buffer to read from.
+        byte_index: byte index to reading from.
+    Returns:
+        Real value.
+    """
+    data = bytearray_[byte_index:byte_index + 8]
+    value = struct.unpack('>d', struct.pack('8B', *data))[0]
+    return value
+
+
+def get_lword(bytearray_: bytearray, byte_index: int) -> int:
+    """ Gets the lword from the buffer.
+    Notes:
+        Datatype `lword` consists in 8 bytes in the PLC.
+        The maximum value posible is ``
+    Args:
+        bytearray_: buffer to read.
+        byte_index: byte index from where to start reading.
+    Returns:
+        Value read.
+    
+    """
+    data = bytearray_[byte_index:byte_index + 4]
+    value = struct.unpack('>Q', struct.pack('8B', *data))[0]
+    return value
+
+
+def get_uint(bytearray_: bytearray, byte_index: int) -> int:
+    """Get uint value from bytearray.
+    Notes:
+        Datatype `uint` in the PLC is represented in two bytes
+    Args:
+        bytearray_: buffer to read from.
+        byte_index: byte index to start reading from.
+    Returns:
+        Int value.
+    """
+    data = bytearray_[byte_index:byte_index + 2]
+    data[1] = data[1] & 0xff
+    data[0] = data[0] & 0xff
+    packed = struct.pack('2B', *data)
+    value = struct.unpack('>H', packed)[0]
+    return value
+
+
+def get_udint(bytearray_: bytearray, byte_index: int) -> int:
+    """Get udint value from bytearray.
+    Notes:
+        Datatype `udint` consists in 4 bytes in the PLC.
+        Maximum possible value is 4294967295.
+        Lower posible value is 0.
+    Args:
+        bytearray_: buffer to read.
+        byte_index: byte index from where to start reading.
+    Returns:
+        Int value
+    Examples:
+
+    """
+    data = bytearray_[byte_index:byte_index + 4]
+    value = struct.unpack('>L', struct.pack('4B', *data))[0]
+    return value
+
+
+def get_ulint(bytearray_: bytearray, byte_index: int) -> int:
+    """Get udint value from bytearray.
+    Notes:
+        Datatype `ulint` consists in 8 bytes in the PLC.
+        Maximum possible value is ????.
+        Lower posible value is 0.
+    Args:
+        bytearray_: buffer to read.
+        byte_index: byte index from where to start reading.
+    Returns:
+        Value read.
+    Examples:
+
+    """
+    data = bytearray_[byte_index:byte_index + 8]
+    value = struct.unpack('>Q', struct.pack('8B', *data))[0]
+    return value
+
+
+def get_lint(bytearray_: bytearray, byte_index: int) -> int:
+    """Get lint value from bytearray.
+    Notes:
+        Datatype `LInt` consists in 8 bytes in the PLC.
+        Maximum possible value is ????.
+        Lower posible value is -????.
+    Args:
+        bytearray_: buffer to read.
+        byte_index: byte index from where to start reading.
+    Returns:
+        Int value.
+    """
+    data = bytearray_[byte_index:byte_index + 8]
+    value = struct.unpack('>q', struct.pack('8B', *data))[0]
+    return value
+
+
 def get_value(bytearray_, byte_index, type_):
     """ Gets the value for a specific type.
     Args:
@@ -349,8 +483,8 @@ def get_value(bytearray_, byte_index, type_):
     if type_.startswith('STRING'):
         max_size = re.search(r'\d+', type_)
         #(\d+\.\.)?(\d+)    0..9
-        if max_size is None:
-            pass
+        #if max_size is None:
+
            #raise Snap7Exception("Max size could not be determinate. re.search() returned None")
         max_size_grouped = max_size.group(0)
         max_size_int = int(max_size_grouped)
@@ -358,27 +492,48 @@ def get_value(bytearray_, byte_index, type_):
 
     elif type_ == 'REAL':
         return get_real(bytearray_, byte_index)
+    
+    elif type_ == 'LREAL':
+        return get_lreal(bytearray_, byte_index)
+    
+    elif type_ == 'WORD':
+        return get_word(bytearray_, byte_index)
 
     elif type_ == 'DWORD':
         return get_dword(bytearray_, byte_index)
+    
+    elif type_ == 'LWORD':
+        return get_lword(bytearray_, byte_index)
 
-    elif type_ == 'DINT':
-        return get_dint(bytearray_, byte_index)
+    elif type_ == 'SINT':
+        return get_sint(bytearray_, byte_index)
 
     elif type_ == 'INT':
         return get_int(bytearray_, byte_index)
-
+    
+    elif type_ == 'DINT':
+        return get_dint(bytearray_, byte_index)
+    
+    elif type_ == 'LINT':
+        return get_lint(bytearray_, byte_index)
+    
+    elif type_ == 'USINT':
+        return get_usint(bytearray_, byte_index)
+    
     elif type_ == 'UINT':
-            return get_uint(bytearray_, byte_index)
+        return get_uint(bytearray_, byte_index)
+
+    elif type_ == 'UDINT':
+        return get_udint(bytearray_, byte_index)
+
+    elif type_ == 'ULINT':
+        return get_ulint(bytearray_, byte_index)
 
     elif type_ == 'BYTE':
         return get_byte(bytearray_, byte_index)
 
     elif type_ == 'CHAR':
         return chr(get_usint(bytearray_, byte_index))
-
-    elif type_ == 'WORD':
-        return get_word(bytearray_, byte_index)
 
     elif type_ == 'S5TIME':
         data_s5time = get_s5time(bytearray_, byte_index)
@@ -388,23 +543,20 @@ def get_value(bytearray_, byte_index, type_):
         data_dt = get_dt(bytearray_, byte_index)
         return data_dt
 
-    elif type_ == 'USINT':
-        return get_usint(bytearray_, byte_index)
-
-    elif type_ == 'SINT':
-        return get_sint(bytearray_, byte_index)
-
-    # add these three not implemented data typ to avoid
-    # 'Unable to get repr for class<snap7.util.DB_ROW>' error
+    # add these three not implemented data typ to avoid error
     elif type_ == 'TIME':
-        return 'read TIME not implemented'
+        _LOGGER.warn('read TIME not implemented')
+        return None
 
     elif type_ == 'DATE':
-        return 'read DATE not implemented'
+        _LOGGER.warn('DATE not implemented')
+        return None
 
     elif type_ == 'TIME_OF_DAY':
-        return 'read TIME_OF_DAY not implemented'
-
+        _LOGGER.warn('TIME_OF_DAY not implemented')
+        return None
+    
+    _LOGGER.warn(' Unknown Data Type %s not implemented', str(type_))
     return None
 
 
@@ -412,7 +564,7 @@ def get_type_size(type_name):
 
     type_name = type_name.strip().upper()
 
-    type_size = { "BOOL": 1, "BYTE": 1, "CHAR": 1, "WORD": 2, "DWORD": 4, "INT": 2, "UINT": 2, "DINT":4, "SINT": 1, "USINT": 1, "REAL":4, "STRING": 256}
+    type_size = { "BOOL": 1, "BYTE": 1, "CHAR": 1, "WORD": 2, "DWORD": 4, "USINT": 1,  "UINT": 2, "UDINT": 4, "ULINT": 8, "SINT": 1, "INT": 2, "DINT":4, "LINT":8,  "REAL":4, "LREAL":8, "STRING": 256, "DATE_AND_TIME": 8}
 
     if type_name in type_size.keys():
         return type_size[type_name]
@@ -436,56 +588,4 @@ def get_type_size(type_name):
         return array_size
 
     raise ValueError
-
-
-def union_range(a):
-    b = []
-    for begin, end in sorted(a):
-        if b and b[-1][1] >= begin - 1:
-            b[-1][1] = max(b[-1][1], end)
-        else:
-            b.append([begin, end])
-
-    return b
-
-
-def get_uint(bytearray_: bytearray, byte_index: int) -> int:
-    """Get uint value from bytearray.
-    Notes:
-        Datatype `uint` in the PLC is represented in two bytes
-    Args:
-        bytearray_: buffer to read from.
-        byte_index: byte index to start reading from.
-    Returns:
-        Value read.
-    Examples:
-
-    """
-    data = bytearray_[byte_index:byte_index + 2]
-    data[1] = data[1] & 0xff
-    data[0] = data[0] & 0xff
-    packed = struct.pack('2B', *data)
-    value = struct.unpack('>H', packed)[0]
-    return value
-
-
-def get_udint(bytearray_: bytearray, byte_index: int) -> int:
-    """Get udint value from bytearray.
-    Notes:
-        Datatype `udint` consists in 4 bytes in the PLC.
-        Maximum possible value is 4294967295.
-        Lower posible value is 0.
-    Args:
-        bytearray_: buffer to read.
-        byte_index: byte index from where to start reading.
-    Returns:
-        Value read.
-    Examples:
-
-    """
-    data = bytearray_[byte_index:byte_index + 4]
-    # I or L ???
-    udint = struct.unpack('>L', struct.pack('4B', *data))[0]
-    return udint
-
 
