@@ -65,12 +65,6 @@ __version__ = "${VERSION}"
 
 """ _DEFAULT_CONFIG with S7 Entities Map
 
-    The coils and registers each have a read-only table and read-write table.
-
-        Coil	Read-write	1 bit
-        Discrete input	Read-only	1 bit
-        Input register	Read-only	16 bits
-        Holding register	Read-write	16 bits
 """
 
 _DEFAULT_CONFIG = {
