@@ -222,9 +222,7 @@ def plugin_poll(handle):
                 raise ValueError(e_msg)
             try:
                 client = snap7.client.Client()
-                client.connect('192.168.1.1', 0, 0)
-
-                #client_connected = client.connect(host, rack, slot, port)
+                client_connected = client.connect(host, rack, slot, port)
                 #client.connect(host, rack, slot)
                 client_connected = client.get_connected()
                 if client_connected:
