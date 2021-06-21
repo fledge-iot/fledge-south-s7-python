@@ -127,7 +127,7 @@ _DEFAULT_CONFIG = {
                     "272.0": {"name": "TESTVAR_Real",    "type": "REAL"}#,
                     #"276.0": {"name": "TESTVAR_String",  "type": "STRING"}#,
                     #"532.0": {"name": "TESTVAR_ChArray", "type": "Char[11]"}
-                },            
+                },
                 "789": {
                     "1288.0": {"name": "Max_Usint", "type": "USInt"},
                     "1290.0": {"name": "Max_UInt", "type": "UInt"},
@@ -145,7 +145,10 @@ _DEFAULT_CONFIG = {
                     "1338.0": {"name": "Min_LReal", "type": "LReal"},
                     "1346.0": {"name": "Max_LReal", "type": "LReal"},
                     "1354.0": {"name": "Min_Date", "type": "Date_And_Time"},
-                    "1362.0": {"name": "Max_Date", "type": "Date_And_Time"}
+                    "1362.0": {"name": "Max_Date", "type": "Date_And_Time"},
+                    #"1370.0": {"name": "Test_Byte", "type": "Byte"},
+                    "1371.3": {"name": "Test_Bool_4", "type": "Bool"},
+                    "1371.5": {"name": "Test_Bool_6", "type": "Bool"}
                 }
             }
         }),
@@ -236,7 +239,7 @@ def plugin_poll(handle):
 
         unit_id = UNIT
         s7_map = json.loads(handle['map']['value'])
-        
+
         db = s7_map['DB']
 
         readings = {}
@@ -255,10 +258,15 @@ def plugin_poll(handle):
                         buffer_ = client.read_area(snap7.types.areas.DB, int(dbnumber), start, size)
 
                         for index, item in variable.items():
-                            byte_index = int(index.split('.')[0])
+                            index_split = index.split('.')
+                            byte_index = int(index_split[0])
+                            bool_index = 0
+                            if  len (index_split) == 2:
+                                bool_index = int(index_split[1])
+
                             if start <= byte_index and byte_index <= end:
-                                _LOGGER.warn("DEBUG: start: %s, type: %s", str(float(index) - start), item['type'])
-                                data = get_value(buffer_, float(index) - start, item['type'])
+                                _LOGGER.warn("DEBUG: byte_index - start: %d, byte_index: %d, start: %d, bool_index: %d, type: %s", byte_index - start, byte_index, start, bool_index, item['type'])
+                                data = get_value(buffer_, byte_index - start, bool_index, item['type'])
 
                                 if data is None:
                                     _LOGGER.error('Failed to read DB: %s index: %s name: %s', str(dbnumber), str(index), str(item['name']))
@@ -372,7 +380,7 @@ def get_lword(bytearray_: bytearray, byte_index: int) -> int:
         byte_index: byte index from where to start reading.
     Returns:
         Value read.
-    
+
     """
     data = bytearray_[byte_index:byte_index + 4]
     value = struct.unpack('>Q', struct.pack('8B', *data))[0]
@@ -452,7 +460,26 @@ def get_lint(bytearray_: bytearray, byte_index: int) -> int:
     return value
 
 
-def get_value(bytearray_, byte_index, type_):
+# TODO: check return format: hex or dec
+# TODO: in the future the function will be implemented in the snap7.util package
+def get_byte_(bytearray_: bytearray, byte_index: int) -> int:
+    """Get byte value from bytearray.
+    Notes:
+        WORD 8bit 1bytes Decimal number unsigned B#(0) to B#(255) => 0 to 255
+    Args:
+        bytearray_: buffer to be read from.
+        byte_index: byte index to be read.
+    Returns:
+        value get from the byte index.
+    """
+    data = bytearray_[byte_index:byte_index + 1]
+    data[0] = data[0] & 0xff
+    packed = struct.pack('B', *data)
+    value = struct.unpack('B', packed)[0]
+    return value
+
+
+def get_value(bytearray_, byte_index, bool_index, type_):
     """ Gets the value for a specific type.
     Args:
         byte_index: byte index from where start reading.
@@ -466,11 +493,7 @@ def get_value(bytearray_, byte_index, type_):
     type_ = type_.strip().upper()
 
     if type_ == 'BOOL':
-        byte_index, bool_index = str(byte_index).split('.')
-        return get_bool(bytearray_, int(float(byte_index)), int(bool_index))
-
-
-    byte_index = int(float(byte_index))
+        return get_bool(bytearray_, byte_index, bool_index)
 
     if type_.startswith('STRING'):
         max_size = re.search(r'\d+', type_)
@@ -484,16 +507,16 @@ def get_value(bytearray_, byte_index, type_):
 
     elif type_ == 'REAL':
         return get_real(bytearray_, byte_index)
-    
+
     elif type_ == 'LREAL':
         return get_lreal(bytearray_, byte_index)
-    
+
     elif type_ == 'WORD':
         return get_word(bytearray_, byte_index)
 
     elif type_ == 'DWORD':
         return get_dword(bytearray_, byte_index)
-    
+
     elif type_ == 'LWORD':
         return get_lword(bytearray_, byte_index)
 
@@ -502,16 +525,16 @@ def get_value(bytearray_, byte_index, type_):
 
     elif type_ == 'INT':
         return get_int(bytearray_, byte_index)
-    
+
     elif type_ == 'DINT':
         return get_dint(bytearray_, byte_index)
-    
+
     elif type_ == 'LINT':
         return get_lint(bytearray_, byte_index)
-    
+
     elif type_ == 'USINT':
         return get_usint(bytearray_, byte_index)
-    
+
     elif type_ == 'UINT':
         return get_uint(bytearray_, byte_index)
 
@@ -522,7 +545,7 @@ def get_value(bytearray_, byte_index, type_):
         return get_ulint(bytearray_, byte_index)
 
     elif type_ == 'BYTE':
-        return get_byte(bytearray_, byte_index)
+        return get_byte_(bytearray_, byte_index)
 
     elif type_ == 'CHAR':
         return chr(get_usint(bytearray_, byte_index))
@@ -547,7 +570,7 @@ def get_value(bytearray_, byte_index, type_):
     elif type_ == 'TIME_OF_DAY':
         _LOGGER.warn('TIME_OF_DAY not implemented')
         return None
-    
+
     _LOGGER.warn(' Unknown Data Type %s not implemented', str(type_))
     return None
 
@@ -580,4 +603,3 @@ def get_type_size(type_name):
         return array_size
 
     raise ValueError
-
