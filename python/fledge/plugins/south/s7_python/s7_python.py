@@ -254,7 +254,7 @@ def plugin_poll(handle):
 
                     for start, end in union_range(a):
                         size = end - start + 1
-                        _LOGGER.warn("DEBUG: dbnumber: %s start: %s, end: %s, size: %s", str(dbnumber), str(start), str(end), str(size))
+                        #_LOGGER.warn("DEBUG: dbnumber: %s start: %s, end: %s, size: %s", str(dbnumber), str(start), str(end), str(size))
                         buffer_ = client.read_area(snap7.types.areas.DB, int(dbnumber), start, size)
 
                         for index, item in variable.items():
@@ -265,7 +265,7 @@ def plugin_poll(handle):
                                 bool_index = int(index_split[1])
 
                             if start <= byte_index and byte_index <= end:
-                                _LOGGER.warn("DEBUG: byte_index - start: %d, byte_index: %d, start: %d, bool_index: %d, type: %s", byte_index - start, byte_index, start, bool_index, item['type'])
+                                #_LOGGER.warn("DEBUG: byte_index - start: %d, byte_index: %d, start: %d, bool_index: %d, type: %s", byte_index - start, byte_index, start, bool_index, item['type'])
                                 data = get_value(buffer_, byte_index - start, bool_index, item['type'])
 
                                 if data is None:
@@ -274,7 +274,7 @@ def plugin_poll(handle):
                                     readings.update({"DB" + dbnumber + "_" + item['name']: data })
 
 
-        _LOGGER.warn('DEBUG OUT='+ str(readings))
+        #_LOGGER.warn('DEBUG OUT='+ str(readings))
 
         wrapper = {
             'asset': handle['assetName']['value'],
@@ -571,7 +571,7 @@ def get_value(bytearray_, byte_index, bool_index, type_):
         _LOGGER.warn('TIME_OF_DAY not implemented')
         return None
 
-    _LOGGER.warn(' Unknown Data Type %s not implemented', str(type_))
+    _LOGGER.warn('Unknown Data Type %s not implemented', str(type_))
     return None
 
 
