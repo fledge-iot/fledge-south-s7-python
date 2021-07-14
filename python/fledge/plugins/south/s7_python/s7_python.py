@@ -255,7 +255,7 @@ def plugin_poll(handle):
                     for start, end in union_range(a):
                         size = end - start + 1
                         #_LOGGER.warn("DEBUG: dbnumber: %s start: %s, end: %s, size: %s", str(dbnumber), str(start), str(end), str(size))
-                        buffer_ = client.read_area(snap7.types.areas.DB, int(dbnumber), start, size)
+                        buffer_ = client.read_area(snap7.types.Areas.DB, int(dbnumber), start, size)
 
                         for index, item in variable.items():
                             index_split = index.split('.')
