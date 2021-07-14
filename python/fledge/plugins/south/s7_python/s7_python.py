@@ -58,7 +58,7 @@ from fledge.services.south import exceptions
 """
 
 __author__ = "Sebastian Kropatschek"
-__copyright__ = "Copyright (c) 2018 ACDP"
+__copyright__ = "Copyright (c) 2021 ACDP"
 __license__ = "Apache 2.0"
 __version__ = "${VERSION}"
 
