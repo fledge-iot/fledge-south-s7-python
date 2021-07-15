@@ -284,6 +284,8 @@ def plugin_poll(handle):
 
     except Exception as ex:
         _LOGGER.error('Failed to read data from s7 device. Got error %s', str(ex))
+        client.disconnect()
+        client = None
         raise ex
     else:
         return wrapper
@@ -338,6 +340,7 @@ def plugin_shutdown(handle):
         _LOGGER.exception('Error in shutting down S7 TCP plugin; %s', str(ex))
         raise ex
     else:
+        client.disconnect()
         client = None
         _LOGGER.info('S7 TCP plugin shut down.')
 
