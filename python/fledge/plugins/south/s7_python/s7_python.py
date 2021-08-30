@@ -286,7 +286,7 @@ def plugin_poll(handle):
                                 if data is None:
                                     _LOGGER.error('Failed to read DB: %s index: %s name: %s', str(dbnumber), str(index), str(item['name']))
                                 else:
-                                    readings.update({"DB" + dbnumber + "_" + item['name']: data })
+                                    readings.update({"DB" + dbnumber + "_" + item['name']: json.dumps(data) })
 
         _LOGGER.debug('DEBUG OUT='+ str(readings))
 
@@ -533,8 +533,10 @@ def get_value(bytearray_, byte_index, item, bool_index):
             #    for n in range(0, byte_index + 0, ):
             #        print(n)
             #        a.append(get_value_(bytearray_, n, type_split[0]))
+            #return json.dumps(a)
 
-            return json.dumps(a)
+            _LOGGER.warn('Array of bool is not supported')
+            raise ValueError
 
         if type_split[0] == 'struct':
             if 'defintion' in item.keys():
