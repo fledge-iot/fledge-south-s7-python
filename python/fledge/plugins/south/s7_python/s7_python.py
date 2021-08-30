@@ -23,6 +23,7 @@ import copy
 import json
 import logging
 import re
+import math
 
 import snap7
 from snap7.util import *
@@ -148,7 +149,24 @@ _DEFAULT_CONFIG = {
                     "1362.0": {"name": "Max_Date", "type": "Date_And_Time"},
                     #"1370.0": {"name": "Test_Byte", "type": "Byte"},
                     "1371.3": {"name": "Test_Bool_4", "type": "Bool"},
-                    "1371.5": {"name": "Test_Bool_6", "type": "Bool"}
+                    "12.0": {"name": "ArrayOfInt", "type": "Int[0..9]"}
+                },
+                "11": {
+                    "0.0": {
+                        "name": "MyUDTs",
+                        "type": "Struct[0..20]",
+                        "defintion":{
+                            "0.0": {"name": "Produktionsauftrag", "type": "String"},
+                            "256.0": {"name": "ProductionId", "type": "DWord"},
+                            "260.0": {"name": "TargetLengthFront", "type": "Real"},
+                            "264.0": {"name": "TargetLengthBack", "type": "Real"},
+                            "268.0": {"name": "ActualLengthFront", "type": "Real"},
+                            "272.0": {"name": "ActualLengthBack", "type": "Real"},
+                            "276.0": {"name": "CycleTime", "type": "Time"},
+                            "280.0": {"name": "Timestamp", "type": "Date_And_Time"}
+                        },
+                        "offset": 0
+                    }
                 }
             }
         }),
@@ -158,7 +176,7 @@ _DEFAULT_CONFIG = {
 }
 
 
-_LOGGER = logger.setup(__name__, level=logging.INFO)
+_LOGGER = logger.setup(__name__, level=logging.DEBUG)
 """ Setup the access to the logging system of Fledge """
 
 UNIT = 0x0
@@ -223,11 +241,12 @@ def plugin_poll(handle):
                 e_msg = 'Failed to parse S7 TCP host address and / or port configuration.'
                 _LOGGER.error('%s %s', e_msg, str(ex))
                 raise ValueError(e_msg)
+
             try:
                 client = snap7.client.Client()
-                client_connected = client.connect(host, rack, slot, port)
-                #client.connect(host, rack, slot)
+                client.connect(host, rack, slot, port)
                 client_connected = client.get_connected()
+
                 if client_connected:
                     _LOGGER.info('S7 TCP Client is connected. %s:%d', host, port)
                 else:
@@ -250,31 +269,26 @@ def plugin_poll(handle):
                     a = []
                     for index, item in variable.items():
                         byte_index = int(index.split('.')[0])
-                        a.append([byte_index, byte_index + get_type_size(item['type']) - 1])
+                        a.append([byte_index, byte_index + get_type_size(item) - 1])
 
                     for start, end in union_range(a):
                         size = end - start + 1
-                        #_LOGGER.warn("DEBUG: dbnumber: %s start: %s, end: %s, size: %s", str(dbnumber), str(start), str(end), str(size))
+                        _LOGGER.debug("DEBUG: dbnumber: %s start: %s, end: %s, size: %s", str(dbnumber), str(start), str(end), str(size))
                         buffer_ = client.read_area(snap7.types.Areas.DB, int(dbnumber), start, size)
 
                         for index, item in variable.items():
-                            index_split = index.split('.')
-                            byte_index = int(index_split[0])
-                            bool_index = 0
-                            if  len (index_split) == 2:
-                                bool_index = int(index_split[1])
+                            byte_index, bool_index = get_byte_and_bool_index(index)
 
                             if start <= byte_index and byte_index <= end:
-                                #_LOGGER.warn("DEBUG: byte_index - start: %d, byte_index: %d, start: %d, bool_index: %d, type: %s", byte_index - start, byte_index, start, bool_index, item['type'])
-                                data = get_value(buffer_, byte_index - start, bool_index, item['type'])
+                                _LOGGER.debug("DEBUG: byte_index - start: %d, byte_index: %d, start: %d, bool_index: %d, type: %s", byte_index - start, byte_index, start, bool_index, item['type'])
+                                data = get_value(buffer_, byte_index - start, item, bool_index)
 
                                 if data is None:
                                     _LOGGER.error('Failed to read DB: %s index: %s name: %s', str(dbnumber), str(index), str(item['name']))
                                 else:
                                     readings.update({"DB" + dbnumber + "_" + item['name']: data })
 
-
-        #_LOGGER.warn('DEBUG OUT='+ str(readings))
+        _LOGGER.debug('DEBUG OUT='+ str(readings))
 
         wrapper = {
             'asset': handle['assetName']['value'],
@@ -310,7 +324,7 @@ def plugin_reconfigure(handle, new_config):
     diff = utils.get_diff(handle, new_config)
 
     # TODO
-    if 'host' in diff or 'port' in diff:
+    if 'host' in diff or 'rack' in diff or 'slot' in diff or 'port' in diff:
         plugin_shutdown(handle)
         new_handle = plugin_init(new_config)
         _LOGGER.info("Restarting S7 TCP plugin due to change in configuration keys [{}]".format(', '.join(diff)))
@@ -335,12 +349,14 @@ def plugin_shutdown(handle):
         if client is not None:
             # TODO
             # client.close()
+            client.disconnect()
+            #client = None
             _LOGGER.info('S7 TCP client connection closed.')
     except Exception as ex:
         _LOGGER.exception('Error in shutting down S7 TCP plugin; %s', str(ex))
         raise ex
     else:
-        client.disconnect()
+    #    client.disconnect()
         client = None
         _LOGGER.info('S7 TCP plugin shut down.')
 
@@ -481,8 +497,99 @@ def get_byte_(bytearray_: bytearray, byte_index: int) -> int:
     value = struct.unpack('B', packed)[0]
     return value
 
+def get_value(bytearray_, byte_index, item, bool_index):
 
-def get_value(bytearray_, byte_index, bool_index, type_):
+    type_name = item['type'].strip().lower()
+
+    type_size = { "bool": 1, "byte": 1, "char": 1, "word": 2, "dword": 4, "usint": 1,  "uint": 2, "udint": 4, "ulint": 8, "sint": 1, "int": 2, "dint":4, "lint":8,  "real":4, "lreal":8, "string": 256, "date_and_time": 8}
+
+    if type_name in type_size.keys():
+        return get_value_(bytearray_, byte_index, type_name, bool_index)
+
+    if type_name == 'struct':
+        if 'defintion' in item.keys():
+            #return json.dumps(get_struct_values(bytearray_, byte_index, item['defintion']))
+            return get_struct_values(bytearray_, byte_index, item['defintion'])
+        else:
+            _LOGGER.warn('Struct data type needs a dict key "defintion"')
+            raise ValueError
+
+    if 'offset' in item.keys():
+        offset = int(item['offset'])
+    else:
+        offset = 0
+
+    type_split = type_name.split('[')
+    if  len (type_split) == 2 and "]" == type_name[-1]:
+        array_size = get_array_size(type_split[1][:-1])
+
+        if type_split[0] == 'string':
+            string_size = array_size # + 2
+            return get_value_(bytearray_, byte_index, 'string', string_size)
+
+        if type_split[0] == 'bool':
+            a = []
+            #for m range(byte_index, byte_index + 0, 1):
+            #    for n in range(0, byte_index + 0, ):
+            #        print(n)
+            #        a.append(get_value_(bytearray_, n, type_split[0]))
+
+            return json.dumps(a)
+
+        if type_split[0] == 'struct':
+            if 'defintion' in item.keys():
+                struct_size = get_struct_size(item['defintion'])
+
+                a = []
+                for n in range(byte_index, byte_index + (struct_size + offset) * array_size, struct_size + offset):
+                    print(n)
+                    a.append(get_struct_values(bytearray_, n, item['defintion']))
+
+                return a
+                #return json.dumps(a)
+
+            else:
+                raise ValueError
+
+        if type_split[0] in type_size.keys():
+            a = []
+
+            _LOGGER.debug("Read Array: byte_index: %s", str(byte_index))
+            _LOGGER.debug("Read Array: type_size[type_split[0]: %s", str(type_size[type_split[0]]))
+            _LOGGER.debug("Read Array: array_size: %s", str(array_size))
+            _LOGGER.debug("Read Array: Range: START: %s, STOP: %s, STEP: %s", str(byte_index), str(byte_index + (type_size[type_split[0]] + offset) * array_size + 1), str(type_size[type_split[0]] + offset))
+            _LOGGER.debug("RANGE: %s", str(range(byte_index, byte_index + (type_size[type_split[0]] + offset) * array_size, type_size[type_split[0]] + offset)))
+
+            for n in range(byte_index, byte_index + (type_size[type_split[0]] + offset) * array_size, type_size[type_split[0]] + offset):
+                _LOGGER.debug("Read Array: n: %s", str(n))
+                a.append(get_value_(bytearray_, n, type_split[0]))
+
+            return a
+            #return json.dumps(a)
+
+    if type_split[0] == 'string' and len (type_split) == 3 and "]" == type_name[-1]:
+        string_size = get_array_size(type_split[1][:-1]) + 1
+        array_size = get_array_size(type_split[2][:-1])
+
+        _LOGGER.debug("Read String Array: byte_index: %s", str(byte_index))
+        _LOGGER.debug("Read String Array: type_size[type_split[0]: %s", str(type_size[type_split[0]]))
+        _LOGGER.debug("Read String Array: array_size: %s", str(array_size))
+        _LOGGER.debug("Read String Array: string_size: %s", str(string_size))
+        _LOGGER.debug("Read String Array: Range: START: %s, STOP: %s, STEP: %s", str(byte_index), str((string_size + offset) * array_size), str(string_size + offset))
+        _LOGGER.debug("RANGE: %s", str(range(byte_index, byte_index + (string_size + offset) * array_size, string_size + offset)))
+
+        a = []
+        for n in range(byte_index, byte_index + (string_size + offset) * array_size, string_size + offset):
+            _LOGGER.debug("Read String Array: n: %s", str(n))
+            a.append(get_value_(bytearray_, n, 'string', string_size - 2))
+        return a
+        #return json.dumps(a)
+
+    raise ValueError
+
+
+
+def get_value_(bytearray_, byte_index, type_, bool_index = None, max_size = 254):
     """ Gets the value for a specific type.
     Args:
         byte_index: byte index from where start reading.
@@ -493,116 +600,221 @@ def get_value(bytearray_, byte_index, bool_index, type_):
         Value read according to the `type_`
     """
 
-    type_ = type_.strip().upper()
+    type_ = type_.strip().lower()
 
-    if type_ == 'BOOL':
-        return get_bool(bytearray_, byte_index, bool_index)
+    if type_ == 'bool':
+        if bool_index == None:
+            _LOGGER.warn('type is bool, but bool_index is not set')
+            return None
+        else:
+            return get_bool(bytearray_, byte_index, bool_index)
 
-    if type_.startswith('STRING'):
-        max_size = re.search(r'\d+', type_)
-        #(\d+\.\.)?(\d+)    0..9
-        #if max_size is None:
+    elif type_ == 'string':
+        return get_string(bytearray_, byte_index, max_size)
 
-           #raise Snap7Exception("Max size could not be determinate. re.search() returned None")
-        max_size_grouped = max_size.group(0)
-        max_size_int = int(max_size_grouped)
-        return get_string(bytearray_, byte_index, max_size_int)
-
-    elif type_ == 'REAL':
+    elif type_ == 'real':
         return get_real(bytearray_, byte_index)
 
-    elif type_ == 'LREAL':
+    elif type_ == 'lreal':
         return get_lreal(bytearray_, byte_index)
 
-    elif type_ == 'WORD':
+    elif type_ == 'word':
         return get_word(bytearray_, byte_index)
 
-    elif type_ == 'DWORD':
+    elif type_ == 'dword':
         return get_dword(bytearray_, byte_index)
 
-    elif type_ == 'LWORD':
+    elif type_ == 'lword':
         return get_lword(bytearray_, byte_index)
 
-    elif type_ == 'SINT':
+    elif type_ == 'sint':
         return get_sint(bytearray_, byte_index)
 
-    elif type_ == 'INT':
+    elif type_ == 'int':
         return get_int(bytearray_, byte_index)
 
-    elif type_ == 'DINT':
+    elif type_ == 'dint':
         return get_dint(bytearray_, byte_index)
 
-    elif type_ == 'LINT':
+    elif type_ == 'lint':
         return get_lint(bytearray_, byte_index)
 
-    elif type_ == 'USINT':
+    elif type_ == 'usint':
         return get_usint(bytearray_, byte_index)
 
-    elif type_ == 'UINT':
+    elif type_ == 'uint':
         return get_uint(bytearray_, byte_index)
 
-    elif type_ == 'UDINT':
+    elif type_ == 'udint':
         return get_udint(bytearray_, byte_index)
 
-    elif type_ == 'ULINT':
+    elif type_ == 'ulint':
         return get_ulint(bytearray_, byte_index)
 
-    elif type_ == 'BYTE':
+    elif type_ == 'byte':
         return get_byte_(bytearray_, byte_index)
 
-    elif type_ == 'CHAR':
+    elif type_ == 'char':
         return chr(get_usint(bytearray_, byte_index))
 
-    elif type_ == 'S5TIME':
+    elif type_ == 's5time':
         data_s5time = get_s5time(bytearray_, byte_index)
         return data_s5time
 
-    elif type_ == 'DATE_AND_TIME':
+    elif type_ == 'date_and_time':
         data_dt = get_dt(bytearray_, byte_index)
         return data_dt
 
     # add these three not implemented data typ to avoid error
-    elif type_ == 'TIME':
+    elif type_ == 'time':
         _LOGGER.warn('read TIME not implemented')
         return None
 
-    elif type_ == 'DATE':
+    elif type_ == 'date':
         _LOGGER.warn('DATE not implemented')
         return None
 
-    elif type_ == 'TIME_OF_DAY':
+    elif type_ == 'time_of_day':
         _LOGGER.warn('TIME_OF_DAY not implemented')
         return None
 
     _LOGGER.warn('Unknown Data Type %s not implemented', str(type_))
     return None
 
+def get_array_size(dimension):
+    if m := re.match(r'(\d+)\.\.(\d+)', dimension):
+        return int(m.group(2)) - int(m.group(1)) + 1
 
-def get_type_size(type_name):
+    if m := re.match(r'(\d+)', dimension):
+        return int(m.group(1)) + 1
 
-    type_name = type_name.strip().upper()
+    _LOGGER.warn('unsupoortes array dimension or definition, %s', str(dimension))
+    raise ValueError
 
-    type_size = { "BOOL": 1, "BYTE": 1, "CHAR": 1, "WORD": 2, "DWORD": 4, "USINT": 1,  "UINT": 2, "UDINT": 4, "ULINT": 8, "SINT": 1, "INT": 2, "DINT":4, "LINT":8,  "REAL":4, "LREAL":8, "STRING": 256, "DATE_AND_TIME": 8}
+def get_struct_size(defintion):
+    s = sorted(defintion, key=lambda t: convert_key(t[0]))
+
+    if (convert_key(min(s)) != 0):
+        _LOGGER.warn('Struct data type does not contain dict key "0.0",  %s', str(defintion))
+        raise ValueError
+
+    try:
+        return convert_key(max(s)) + get_type_size_(defintion[max(s)]["type"])
+    except:
+        raise ValueError
+
+def convert_key(key):
+    try:
+        return int(float(key))
+    except ValueError:
+        return key
+
+def get_type_size_(type_name):
+    type_size = { "bool": 1, "byte": 1, "char": 1, "word": 2, "dword": 4, "usint": 1,  "uint": 2, "udint": 4, "ulint": 8, "sint": 1, "int": 2, "dint":4, "lint":8,  "real":4, "lreal":8, "string": 256, "date_and_time": 8}
+
+    type_name = type_name.strip().lower()
 
     if type_name in type_size.keys():
         return type_size[type_name]
 
+    _LOGGER.warn('Unkown type %s', str(type_name))
+    raise ValueError
+
+def get_type_size(item):
+    type_size = { "bool": 1, "byte": 1, "char": 1, "word": 2, "dword": 4, "usint": 1,  "uint": 2, "udint": 4, "ulint": 8, "sint": 1, "int": 2, "dint":4, "lint":8,  "real":4, "lreal":8, "string": 256, "date_and_time": 8}
+
+    type_name = item['type'].strip().lower()
+
+    if type_name in type_size.keys():
+        return type_size[type_name]
+
+    if type_name == 'struct':
+        if 'defintion' in item.keys():
+            return get_struct_size(item['defintion'])
+        else:
+            _LOGGER.warn('Struct data type needs a dict key "defintion"')
+            raise ValueError
+
+    if 'offset' in item.keys():
+        offset = int(item['offset'])
+    else:
+        offset = 0
+
     type_split = type_name.split('[')
     if  len (type_split) == 2 and "]" == type_name[-1]:
-        array_size = int(type_split[1][:-1]) # +1 because array start with 0
+        array_size = get_array_size(type_split[1][:-1])
 
-        if type_split[0] == 'STRING':
+        if type_split[0] == 'string':
             return array_size + 2
 
-        if type_split[0] in type_size.keys():
-            return type_size[type_split[0]] * array_size
+        if type_split[0] == 'struct':
+            if 'defintion' in item.keys():
+                return (get_struct_size(item['defintion']) + offset) * array_size
+            else:
+                raise ValueError
 
-    if  type_split[0] == 'STRING' and len (type_split) == 3 and "]" == type_name[-1]:
-        string_size = int(type_split[1][:-1]) + 2 # +1 because array start with 0
-        array_size = int(type_split[2][:-1]) # +1 because array start with 0
+        if type_split[0] == 'bool':
+            return math.ceil(array_size/8)
+
+        if type_split[0] in type_size.keys():
+            return (type_size[type_split[0]] + offset) * array_size
+
+    if  type_split[0] == 'string' and len (type_split) == 3 and "]" == type_name[-1]:
+        string_size = get_array_size(type_split[1][:-1]) + 2 # +1 because array start with 0
+        array_size = get_array_size(type_split[2][:-1]) # +1 because array start with 0
         return array_size * string_size
 
-    if type_split[0] == 'STRING':
-        return array_size
-
+    _LOGGER.warn('data type is not supported or does not exist,  %s', str(type_name))
     raise ValueError
+
+def get_byte_and_bool_index(index):
+    index_split = index.split('.')
+    byte_index = int(index_split[0])
+    bool_index = 0
+    if  len (index_split) == 2:
+        bool_index = int(index_split[1])
+
+    return byte_index, bool_index
+
+def get_struct_values(bytearray_, byte_index, defintion):
+    o = {}
+
+    for index, item in defintion.items():
+        struct_byte_index, bool_index = get_byte_and_bool_index(index)
+
+        _LOGGER.debug("Read Struct: byte_index: %s", str(byte_index))
+        _LOGGER.debug("Read Struct: struct_byte_index: %s", str(struct_byte_index))
+        _LOGGER.debug("Read Struct: item: %s", str(item))
+
+
+        type_name = item['type'].strip().lower()
+        type_split = type_name.split('[')
+
+        type_size = { "bool": 1, "byte": 1, "char": 1, "word": 2, "dword": 4, "usint": 1,  "uint": 2, "udint": 4, "ulint": 8, "sint": 1, "int": 2, "dint":4, "lint":8,  "real":4, "lreal":8, "string": 256, "date_and_time": 8}
+
+        if type_name in type_size.keys():
+            o[item['name']] = get_value_(bytearray_, byte_index + struct_byte_index, type_name, bool_index)
+
+        elif  len (type_split) == 2 and "]" == type_name[-1]:
+            array_size = get_array_size(type_split[1][:-1])
+
+            if type_split[0] == 'string':
+                o[item['name']] = get_value_(bytearray_, byte_index + struct_byte_index, type_name, bool_index, array_size)
+
+            elif type_split[0] == 'bool':
+                pass
+
+            elif type_split[0] in type_size.keys():
+                a = []
+                for n in range(byte_index + struct_byte_index, byte_index + struct_byte_index + (type_size[type_split[0]]) * array_size + 1, type_size[type_split[0]]):
+                    print(n)
+                    a.append(get_value_(bytearray_, n, type_split[0]))
+
+                o[item['name']] = a
+
+            else:
+                pass
+        else:
+            pass
+
+    return o
