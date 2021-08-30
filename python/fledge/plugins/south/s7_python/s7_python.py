@@ -532,14 +532,13 @@ def get_value(bytearray_, byte_index, item, bool_index):
 
         if type_split[0] == 'bool':
             a = []
-            #for m range(byte_index, byte_index + 0, 1):
-            #    for n in range(0, byte_index + 0, ):
-            #        print(n)
-            #        a.append(get_value_(bytearray_, n, type_split[0]))
-            #return json.dumps(a)
 
-            _LOGGER.warn('Array of bool is not supported')
-            raise ValueError
+            for n in range(0, array_size , 1):
+                bool_byte_index, bool_index = divmod(n,8)
+                _LOGGER.debug("Bool byte_index: %d, bool_index: %d", byte_index + bool_byte_index, bool_index)
+                a.append(get_value_(bytearray_, byte_index + bool_byte_index, type_split[0], bool_index))
+
+            return a
 
         if type_split[0] == 'struct':
             if 'defintion' in item.keys():
