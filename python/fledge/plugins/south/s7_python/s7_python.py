@@ -274,7 +274,10 @@ def plugin_poll(handle):
                     for start, end in union_range(a):
                         size = end - start + 1
                         _LOGGER.debug("DEBUG: dbnumber: %s start: %s, end: %s, size: %s", str(dbnumber), str(start), str(end), str(size))
-                        buffer_ = client.read_area(snap7.types.Areas.DB, int(dbnumber), start, size)
+                        try:
+                            buffer_ = client.read_area(snap7.types.Areas.DB, int(dbnumber), start, size)
+                        except Exception as ex:
+                            _LOGGER.error('Failed to read area from s7 device: dbnumber: %s start: %s, end: %s, size: %s Got error %s', str(dbnumber), str(start), str(end), str(size), str(ex))
 
                         for index, item in variable.items():
                             byte_index, bool_index = get_byte_and_bool_index(index)
@@ -286,7 +289,7 @@ def plugin_poll(handle):
                                 if data is None:
                                     _LOGGER.error('Failed to read DB: %s index: %s name: %s', str(dbnumber), str(index), str(item['name']))
                                 else:
-                                    readings.update({"DB" + dbnumber + "_" + item['name']: json.dumps(data) })
+                                    readings.update({"DB" + dbnumber + "_" + item['name']:  data })
 
         _LOGGER.debug('DEBUG OUT='+ str(readings))
 
@@ -808,7 +811,7 @@ def get_struct_values(bytearray_, byte_index, defintion):
 
             elif type_split[0] in type_size.keys():
                 a = []
-                for n in range(byte_index + struct_byte_index, byte_index + struct_byte_index + (type_size[type_split[0]]) * array_size + 1, type_size[type_split[0]]):
+                for n in range(byte_index + struct_byte_index, byte_index + struct_byte_index + (type_size[type_split[0]]) * array_size, type_size[type_split[0]]):
                     print(n)
                     a.append(get_value_(bytearray_, n, type_split[0]))
 
