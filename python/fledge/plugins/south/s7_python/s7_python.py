@@ -173,6 +173,14 @@ _DEFAULT_CONFIG = {
         }),
         'order': '6',
         'displayName': 'Register Map'
+    },
+    "saveAs": {
+        "description": "The way arrays and objects are stored",
+        "type": "enumeration",
+        'options': ['flat', 'escaped', 'object'],
+        "default": 'flat',
+        'order': '7',
+        'displayName': 'Store Readings'
     }
 }
 
@@ -275,6 +283,8 @@ def plugin_poll(handle):
                         a.append([byte_index, byte_index
                                  + get_type_size(item) - 1])
 
+                    _LOGGER.debug("union_range(a): %s", str(union_range(a)))
+
                     for start, end in union_range(a):
                         size = end - start + 1
                         _LOGGER.debug("DEBUG: dbnumber: %s start: %s, end: %s, size: %s", str(
@@ -282,26 +292,28 @@ def plugin_poll(handle):
                         try:
                             buffer_ = client.read_area(
                                 snap7.types.Areas.DB, int(dbnumber), start, size)
+
+                            for index, item in variable.items():
+                                byte_index, bool_index = get_byte_and_bool_index(
+                                    index)
+
+                                if start <= byte_index and byte_index <= end:
+                                    _LOGGER.debug("DEBUG: byte_index - start: %d, byte_index: %d, start: %d, bool_index: %d, type: %s",
+                                                  byte_index - start, byte_index, start, bool_index, item['type'])
+                                    data = get_value(
+                                        buffer_, byte_index - start, item, bool_index)
+
+                                    if data is None:
+                                        _LOGGER.error('Failed to read DB: %s index: %s name: %s', str(
+                                            dbnumber), str(index), str(item['name']))
+                                    else:
+                                        readings.update(
+                                            {"DB" + dbnumber + "_" + item['name']:  data})
+
                         except Exception as ex:
                             _LOGGER.error('Failed to read area from s7 device: dbnumber: %s start: %s, end: %s, size: %s Got error %s', str(
                                 dbnumber), str(start), str(end), str(size), str(ex))
-
-                        for index, item in variable.items():
-                            byte_index, bool_index = get_byte_and_bool_index(
-                                index)
-
-                            if start <= byte_index and byte_index <= end:
-                                _LOGGER.debug("DEBUG: byte_index - start: %d, byte_index: %d, start: %d, bool_index: %d, type: %s",
-                                              byte_index - start, byte_index, start, bool_index, item['type'])
-                                data = get_value(
-                                    buffer_, byte_index - start, item, bool_index)
-
-                                if data is None:
-                                    _LOGGER.error('Failed to read DB: %s index: %s name: %s', str(
-                                        dbnumber), str(index), str(item['name']))
-                                else:
-                                    readings.update(
-                                        {"DB" + dbnumber + "_" + item['name']:  data})
+                            raise ex
 
         _LOGGER.debug('DEBUG OUT=' + str(readings))
 
@@ -630,7 +642,8 @@ def get_value_(bytearray_, byte_index, type_, bool_index=None, max_size=254):
 
     type_ = type_.strip().lower()
 
-    _LOGGER.debug("get_value_: byte_index: type_: bool_index: , max_size: )", str(byte_index), str(type_), str(bool_index), str(max_size))
+    _LOGGER.debug("get_value_: byte_index: type_: bool_index: , max_size: )", str(
+        byte_index), str(type_), str(bool_index), str(max_size))
 
     if type_ == 'bool':
         if bool_index == None:
@@ -874,3 +887,12 @@ def get_struct_values(bytearray_, byte_index, defintion):
             pass
 
     return o
+
+
+def bool_(value):
+    if value in (True, "True", "true", 1, "1"):
+        return True
+    if value in (False, "False", "false", 0, "0"):
+        return False
+    else:
+        bool(value)
