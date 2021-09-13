@@ -321,12 +321,14 @@ def plugin_poll(handle):
 
                                         elif handle["saveAs"]["value"] == "escaped":
 
-                                            _LOGGER.debug(
-                                                'json.dumps(data)=' + json.dumps(data))
-                                            _LOGGER.debug(
-                                                'json.dumps(json.dumps(data))=' + json.dumps(json.dumps(data)))
-                                            readings.update({"DB" + dbnumber + "_" + item['name']:
-                                                             "[{\\\"Produktionsauftrag\\\": \\\"P12346789\\\", \\\"ProductionId\\\": 6636321}]"})
+                                            _LOGGER.warn('No support for escaped JSON currently')
+
+                                            # _LOGGER.debug(
+                                            #     'json.dumps(data)=' + json.dumps(data))
+                                            # _LOGGER.debug(
+                                            #     'json.dumps(json.dumps(data))=' + json.dumps(json.dumps(data)))
+                                            # readings.update({"DB" + dbnumber + "_" + item['name']:
+                                            #                  "[{\\\"Produktionsauftrag\\\": \\\"P12346789\\\", \\\"ProductionId\\\": 6636321}]"})
                                             #readings.update(
                                             #    {"DB" + dbnumber + "_" + item['name']: str(json.dumps(json.dumps(data)))})
                                         else:
