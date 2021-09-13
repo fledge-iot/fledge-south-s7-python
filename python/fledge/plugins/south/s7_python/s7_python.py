@@ -193,7 +193,7 @@ _DEFAULT_CONFIG = {
 
 
 #_LOGGER = logger.setup(__name__, level=logging.DEBUG)
-_LOGGER = logger.setup(__name__, level=logging.INFO)
+_LOGGER = logger.setup(__name__, level=logging.WARN)
 """ Setup the access to the logging system of Fledge """
 
 UNIT = 0x0
