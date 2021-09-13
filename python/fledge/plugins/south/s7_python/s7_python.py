@@ -181,11 +181,19 @@ _DEFAULT_CONFIG = {
         "default": 'flat',
         'order': '7',
         'displayName': 'Store Readings'
+    },
+    'supportStaticValues': {
+        'type': 'boolean',
+        'description': 'Activation of write support for the type boolean. This setting is not recommended because only whole bytes can be written. Procedure: The byte is read, then a bit is changed and finally the whole byte with the changed bit is written again. In the meantime, however, a bit may have changed, which can be very dangerous)',
+        'default': 'False',
+        'order': '7',
+        'displayName': 'Static value support'
     }
 }
 
 
-_LOGGER = logger.setup(__name__, level=logging.DEBUG)
+#_LOGGER = logger.setup(__name__, level=logging.DEBUG)
+LOGGER = logger.setup(__name__, level=logging.WARN)
 """ Setup the access to the logging system of Fledge """
 
 UNIT = 0x0
@@ -307,8 +315,23 @@ def plugin_poll(handle):
                                         _LOGGER.error('Failed to read DB: %s index: %s name: %s', str(
                                             dbnumber), str(index), str(item['name']))
                                     else:
-                                        readings.update(
-                                            {"DB" + dbnumber + "_" + item['name']:  data})
+                                        if handle["saveAs"]["value"] == "flat":
+                                            for element in list(walk(data, "DB" + dbnumber + "_" + item['name'])):
+                                                readings.update(element)
+
+                                        elif handle["saveAs"]["value"] == "escaped":
+
+                                            _LOGGER.debug(
+                                                'json.dumps(data)=' + json.dumps(data))
+                                            _LOGGER.debug(
+                                                'json.dumps(json.dumps(data))=' + json.dumps(json.dumps(data)))
+                                            readings.update({"DB" + dbnumber + "_" + item['name']:
+                                                             "[{\\\"Produktionsauftrag\\\": \\\"P12346789\\\", \\\"ProductionId\\\": 6636321}]"})
+                                            #readings.update(
+                                            #    {"DB" + dbnumber + "_" + item['name']: str(json.dumps(json.dumps(data)))})
+                                        else:
+                                            readings.update(
+                                                {"DB" + dbnumber + "_" + item['name']:  data})
 
                         except Exception as ex:
                             _LOGGER.error('Failed to read area from s7 device: dbnumber: %s start: %s, end: %s, size: %s Got error %s', str(
@@ -896,3 +919,24 @@ def bool_(value):
         return False
     else:
         bool(value)
+
+
+def walk(indict, pre=None, separator='_'):
+    pre = pre if pre else ""
+    if isinstance(indict, dict):
+        for key, value in indict.items():
+            if isinstance(value, dict):
+                for d in walk(value,  pre + key):
+                    yield d
+            elif isinstance(value, list) or isinstance(value, tuple):
+                for k, v in enumerate(value):
+                    for d in walk(v, pre + separator + str(key) + separator + str(k)):
+                        yield d
+            else:
+                yield {pre + separator + str(key): value}
+    elif isinstance(indict, list) or isinstance(indict, tuple):
+        for k, v in enumerate(indict):
+            for d in walk(v, pre + separator + str(k)):
+                yield d
+    else:
+        yield {pre: indict}
