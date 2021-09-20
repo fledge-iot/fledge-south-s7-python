@@ -314,8 +314,7 @@ def plugin_poll(handle):
 
                                         elif handle["saveAs"]["value"] == "escaped":
 
-                                            _LOGGER.warn(
-                                                'No support for escaped JSON currently')
+                                            #_LOGGER.warn('No support for escaped JSON currently')
 
                                             # _LOGGER.debug(
                                             #     'json.dumps(data)=' + json.dumps(data))
