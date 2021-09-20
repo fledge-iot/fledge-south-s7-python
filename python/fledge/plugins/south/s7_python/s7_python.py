@@ -181,13 +181,6 @@ _DEFAULT_CONFIG = {
         "default": 'flat',
         'order': '7',
         'displayName': 'Store Readings'
-    },
-    'supportStaticValues': {
-        'type': 'boolean',
-        'description': 'Activation of write support for the type boolean. This setting is not recommended because only whole bytes can be written. Procedure: The byte is read, then a bit is changed and finally the whole byte with the changed bit is written again. In the meantime, however, a bit may have changed, which can be very dangerous)',
-        'default': 'False',
-        'order': '7',
-        'displayName': 'Static value support'
     }
 }
 
@@ -321,7 +314,8 @@ def plugin_poll(handle):
 
                                         elif handle["saveAs"]["value"] == "escaped":
 
-                                            _LOGGER.warn('No support for escaped JSON currently')
+                                            _LOGGER.warn(
+                                                'No support for escaped JSON currently')
 
                                             # _LOGGER.debug(
                                             #     'json.dumps(data)=' + json.dumps(data))
@@ -329,8 +323,8 @@ def plugin_poll(handle):
                                             #     'json.dumps(json.dumps(data))=' + json.dumps(json.dumps(data)))
                                             # readings.update({"DB" + dbnumber + "_" + item['name']:
                                             #                  "[{\\\"Produktionsauftrag\\\": \\\"P12346789\\\", \\\"ProductionId\\\": 6636321}]"})
-                                            #readings.update(
-                                            #    {"DB" + dbnumber + "_" + item['name']: str(json.dumps(json.dumps(data)))})
+                                            readings.update(
+                                                {"DB" + dbnumber + "_" + item['name']: escape_json(json.dumps(data))})
                                         else:
                                             readings.update(
                                                 {"DB" + dbnumber + "_" + item['name']:  data})
@@ -942,3 +936,25 @@ def walk(indict, pre=None, separator='_'):
                 yield d
     else:
         yield {pre: indict}
+
+
+def escape_json(s):
+    o = []
+    for c in s:
+        if c == '"':
+            o += ["\\\""]
+        elif c == '\\':
+            o += ["\\\\"]
+        elif c == '\b':
+            o += ["\\b"]
+        elif c == '\f':
+            o += ["\f"]
+        elif c == '\n':
+            o += ["\\n"]
+        elif c == '\r':
+            o += ["\\r"]
+        elif c == '\t':
+            o += ["\\t"]
+        else:
+            o += [c]
+    return "".join(o)
