@@ -118,21 +118,24 @@ _DEFAULT_CONFIG = {
         'default': json.dumps({
             "DB": {
                 "788": {
-                    "0.0":    {"name": "Job",               "type": "String[254]"},
-                    "256.0":  {"name": "Count",             "type": "UINT"},
-                    "258.0":  {"name": "Active",            "type": "BOOL"},
-                    "258.1":  {"name": "TESTVAR_Bits",      "type": "BOOL"},
-                    "260.0":  {"name": "TESTVAR_Word",      "type": "WORD"},
-                    "262.0":  {"name": "TESTVAR_Int",       "type": "INT"},
-                    "264.0":  {"name": "TESTVAR_DWord",     "type": "DWORD"},
-                    "268.0":  {"name": "TESTVAR_DInt",      "type": "DINT"},
-                    "272.0":  {"name": "TESTVAR_Real",      "type": "REAL"},
-                    "3352.0": {"name": "TESTVAR_Time_Min",  "type": "Time"},
-                    "3356.0": {"name": "TESTVAR_Time_Max",  "type": "Time"},
-                    "3360.0": {"name": "TESTVAR_LTime_Min", "type": "LTime"},
-                    "3368.0": {"name": "TESTVAR_LTime_Max", "type": "LTime"},
-                    "276.0":  {"name": "TESTVAR_String",    "type": "STRING"},
-                    "532.0":  {"name": "TESTVAR_ChArray",   "type": "Char[11]"}
+                    "0.0":   {"name": "Job",               "type": "String[254]"},
+                    "256.0": {"name": "Count",             "type": "UINT"},
+                    "258.0": {"name": "Active",            "type": "BOOL"},
+                    "258.1": {"name": "TESTVAR_Bits",      "type": "BOOL"},
+                    "260.0": {"name": "TESTVAR_Word",      "type": "WORD"},
+                    "262.0": {"name": "TESTVAR_Int",       "type": "INT"},
+                    "264.0": {"name": "TESTVAR_DWord",     "type": "DWORD"},
+                    "268.0": {"name": "TESTVAR_DInt",      "type": "DINT"},
+                    "272.0": {"name": "TESTVAR_Real",      "type": "REAL"},
+                    "276.0": {"name": "TESTVAR_String",    "type": "STRING"},
+                    "532.0": {"name": "TESTVAR_ChArray",   "type": "Char[11]"},
+                    "544.0": {"name": "TESTVAR_Char",      "type": "Char"},
+                    "546.0": {"name": "StaticVar",         "type": "Int"},
+                    "548.0": {"name": "TESTVAR_Time_Min",  "type": "Time"},
+                    "552.0": {"name": "TESTVAR_Time_Max",  "type": "Time"},
+                    "556.0": {"name": "TESTVAR_LTime_Min", "type": "LTime"},
+                    "564.0": {"name": "TESTVAR_LTime_Max", "type": "LTime"}
+
                 },
                 "789": {
                     "1288.0": {"name": "Max_Usint",   "type": "USInt"},
@@ -881,6 +884,7 @@ def get_type_size(item):
 
 
 def get_byte_and_bool_index(index):
+    index = str(index)
     index_split = index.split('.')
     byte_index = int(index_split[0])
     bool_index = 0
