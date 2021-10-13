@@ -593,6 +593,7 @@ def get_value(bytearray_, byte_index, item, bool_index):
         array_size = get_array_size(type_split[1][:-1])
 
         if type_split[0] == 'string':
+            # add 2 for S7 String Type
             string_size = array_size + 2
             _LOGGER.debug("get_value: string_size: %d", string_size)
             return get_value_(bytearray_, byte_index, 'string', string_size)
@@ -742,8 +743,7 @@ def get_value_(bytearray_, byte_index, type_, bool_index=None, max_size=254):
         return get_byte_(bytearray_, byte_index)
 
     elif type_ == 'char':
-        #get_usint(bytearray_, byte_index)
-        #return chr(get_usint(bytearray_, byte_index))
+        #return chr(get_char_(bytearray_, byte_index))
         return get_char_(bytearray_, byte_index)
 
     elif type_ == 'time':
@@ -760,11 +760,7 @@ def get_value_(bytearray_, byte_index, type_, bool_index=None, max_size=254):
         data_dt = get_dt(bytearray_, byte_index)
         return data_dt
 
-    # add these three not implemented data typ to avoid error
-    #elif type_ == 'time':
-    #    _LOGGER.warn('read TIME not implemented')
-    #    return None
-
+    # add these two not implemented data typ to avoid error
     elif type_ == 'date':
         _LOGGER.warn('DATE not implemented')
         return None
@@ -851,6 +847,7 @@ def get_type_size(item):
         array_size = get_array_size(type_split[1][:-1])
 
         if type_split[0] == 'string':
+            # add 2 for S7 String Type
             string_size = array_size + 2
             _LOGGER.debug(
                 "get_type_size: string: string_size: %d", string_size)
@@ -869,11 +866,10 @@ def get_type_size(item):
             return (type_size[type_split[0]] + offset) * array_size
 
     if type_split[0] == 'string' and len(type_split) == 3 and "]" == type_name[-1]:
-        # +1 because array start with 0
+        # add 2 for S7 String Type
         string_size = get_array_size(type_split[1][:-1]) + 2
         _LOGGER.debug(
             "get_type_size: Array of string: string_size: %d", string_size)
-        # +1 because array start with 0
         array_size = get_array_size(type_split[2][:-1])
         _LOGGER.debug(
             "get_type_size: Array of string: array_size: %d", array_size)
@@ -997,6 +993,7 @@ def escape_json(s):
             o += ["\\r"]
         elif c == '\t':
             o += ["\\t"]
+        # FIXME: add control char
         else:
             o += [c]
     return "".join(o)
