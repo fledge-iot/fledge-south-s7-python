@@ -119,7 +119,6 @@ class TestS7:
             Description of returned object.
 
         """
-
         s7._logger = MagicMock()
 #
 #         # Used to check the conversions

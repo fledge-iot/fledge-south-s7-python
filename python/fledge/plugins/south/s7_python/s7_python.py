@@ -118,53 +118,57 @@ _DEFAULT_CONFIG = {
         'default': json.dumps({
             "DB": {
                 "788": {
-                    "0.0":   {"name": "Job",             "type": "String[254]"},
-                    "256.0": {"name": "Count",           "type": "UINT"},
-                    "258.0": {"name": "Active",          "type": "BOOL"},
-                    "258.1": {"name": "TESTVAR_Bits",    "type": "BOOL"},
-                    "260.0": {"name": "TESTVAR_Word",    "type": "WORD"},
-                    "262.0": {"name": "TESTVAR_Int",     "type": "INT"},
-                    "264.0": {"name": "TESTVAR_DWord",   "type": "DWORD"},
-                    "268.0": {"name": "TESTVAR_DInt",    "type": "DINT"},
-                    "272.0": {"name": "TESTVAR_Real",    "type": "REAL"}  # ,
-                    # "276.0": {"name": "TESTVAR_String",  "type": "STRING"}#,
-                    # "532.0": {"name": "TESTVAR_ChArray", "type": "Char[11]"}
+                    "0.0":    {"name": "Job",               "type": "String[254]"},
+                    "256.0":  {"name": "Count",             "type": "UINT"},
+                    "258.0":  {"name": "Active",            "type": "BOOL"},
+                    "258.1":  {"name": "TESTVAR_Bits",      "type": "BOOL"},
+                    "260.0":  {"name": "TESTVAR_Word",      "type": "WORD"},
+                    "262.0":  {"name": "TESTVAR_Int",       "type": "INT"},
+                    "264.0":  {"name": "TESTVAR_DWord",     "type": "DWORD"},
+                    "268.0":  {"name": "TESTVAR_DInt",      "type": "DINT"},
+                    "272.0":  {"name": "TESTVAR_Real",      "type": "REAL"},
+                    "3352.0": {"name": "TESTVAR_Time_Min",  "type": "Time"},
+                    "3356.0": {"name": "TESTVAR_Time_Max",  "type": "Time"},
+                    "3360.0": {"name": "TESTVAR_LTime_Min", "type": "LTime"},
+                    "3368.0": {"name": "TESTVAR_LTime_Max", "type": "LTime"},
+                    "276.0":  {"name": "TESTVAR_String",    "type": "STRING"},
+                    "532.0":  {"name": "TESTVAR_ChArray",   "type": "Char[11]"}
                 },
                 "789": {
-                    "1288.0": {"name": "Max_Usint", "type": "USInt"},
-                    "1290.0": {"name": "Max_UInt", "type": "UInt"},
-                    "1292.0": {"name": "Max_ULInt", "type": "ULInt"},
-                    "1300.0": {"name": "Min_SInt", "type": "SInt"},
-                    "1301.0": {"name": "Max_SInt", "type": "SInt"},
-                    "1302.0": {"name": "Min_Int", "type": "Int"},
-                    "1304.0": {"name": "Max_Int", "type": "Int"},
-                    "1306.0": {"name": "Min_DInt", "type": "DInt"},
-                    "1310.0": {"name": "Max_DInt", "type": "DInt"},
-                    "1314.0": {"name": "Min_LInt", "type": "LInt"},
-                    "1322.0": {"name": "Max_LInt", "type": "LInt"},
-                    "1330.0": {"name": "Min_Real", "type": "Real"},
-                    "1334.0": {"name": "Max_Real", "type": "Real"},
-                    "1338.0": {"name": "Min_LReal", "type": "LReal"},
-                    "1346.0": {"name": "Max_LReal", "type": "LReal"},
-                    "1354.0": {"name": "Min_Date", "type": "Date_And_Time"},
-                    "1362.0": {"name": "Max_Date", "type": "Date_And_Time"},
-                    # "1370.0": {"name": "Test_Byte", "type": "Byte"},
+                    "1288.0": {"name": "Max_Usint",   "type": "USInt"},
+                    "1290.0": {"name": "Max_UInt",    "type": "UInt"},
+                    "1292.0": {"name": "Max_ULInt",   "type": "ULInt"},
+                    "1300.0": {"name": "Min_SInt",    "type": "SInt"},
+                    "1301.0": {"name": "Max_SInt",    "type": "SInt"},
+                    "1302.0": {"name": "Min_Int",     "type": "Int"},
+                    "1304.0": {"name": "Max_Int",     "type": "Int"},
+                    "1306.0": {"name": "Min_DInt",    "type": "DInt"},
+                    "1310.0": {"name": "Max_DInt",    "type": "DInt"},
+                    "1314.0": {"name": "Min_LInt",    "type": "LInt"},
+                    "1322.0": {"name": "Max_LInt",    "type": "LInt"},
+                    "1330.0": {"name": "Min_Real",    "type": "Real"},
+                    "1334.0": {"name": "Max_Real",    "type": "Real"},
+                    "1338.0": {"name": "Min_LReal",   "type": "LReal"},
+                    "1346.0": {"name": "Max_LReal",   "type": "LReal"},
+                    "1354.0": {"name": "Min_Date",    "type": "Date_And_Time"},
+                    "1362.0": {"name": "Max_Date",    "type": "Date_And_Time"},
+                    "1370.0": {"name": "Test_Byte",   "type": "Byte"},
                     "1371.3": {"name": "Test_Bool_4", "type": "Bool"},
-                    "12.0": {"name": "ArrayOfInt", "type": "Int[0..9]"}
+                    "12.0":   {"name": "ArrayOfInt",  "type": "Int[0..9]"}
                 },
                 "11": {
                     "0.0": {
                         "name": "MyUDTs",
                         "type": "Struct[0..20]",
                         "defintion": {
-                            "0.0": {"name": "Produktionsauftrag", "type": "String"},
-                            "256.0": {"name": "ProductionId", "type": "DWord"},
-                            "260.0": {"name": "TargetLengthFront", "type": "Real"},
-                            "264.0": {"name": "TargetLengthBack", "type": "Real"},
-                            "268.0": {"name": "ActualLengthFront", "type": "Real"},
-                            "272.0": {"name": "ActualLengthBack", "type": "Real"},
-                            "276.0": {"name": "CycleTime", "type": "Time"},
-                            "280.0": {"name": "Timestamp", "type": "Date_And_Time"}
+                            "0.0":   {"name": "Produktionsauftrag", "type": "String"},
+                            "256.0": {"name": "ProductionId",       "type": "DWord"},
+                            "260.0": {"name": "TargetLengthFront",  "type": "Real"},
+                            "264.0": {"name": "TargetLengthBack",   "type": "Real"},
+                            "268.0": {"name": "ActualLengthFront",  "type": "Real"},
+                            "272.0": {"name": "ActualLengthBack",   "type": "Real"},
+                            "276.0": {"name": "CycleTime",          "type": "Time"},
+                            "280.0": {"name": "Timestamp",          "type": "Date_And_Time"}
                         },
                         "offset": 0
                     }
@@ -185,8 +189,8 @@ _DEFAULT_CONFIG = {
 }
 
 
-#_LOGGER = logger.setup(__name__, level=logging.DEBUG)
-_LOGGER = logger.setup(__name__, level=logging.WARN)
+_LOGGER = logger.setup(__name__, level=logging.DEBUG)
+#_LOGGER = logger.setup(__name__, level=logging.WARN)
 """ Setup the access to the logging system of Fledge """
 
 UNIT = 0x0
@@ -545,12 +549,28 @@ def get_byte_(bytearray_: bytearray, byte_index: int) -> int:
     return value
 
 
+def get_char_(bytearray_: bytearray, byte_index: int):
+    """Get char value from bytearray.
+
+    Args:
+        bytearray_: buffer to be read from.
+        byte_index: byte index to be read.
+    Returns:
+        value get from the byte index.
+    """
+    data = bytearray_[byte_index:byte_index + 1]
+    data[0] = data[0] & 0xff
+    packed = struct.pack('B', *data)
+    value = struct.unpack('s', packed)[0]
+    return value
+
+
 def get_value(bytearray_, byte_index, item, bool_index):
 
     type_name = item['type'].strip().lower()
 
     type_size = {"bool": 1, "byte": 1, "char": 1, "word": 2, "dword": 4, "usint": 1,  "uint": 2, "udint": 4,
-                 "ulint": 8, "sint": 1, "int": 2, "dint": 4, "lint": 8,  "real": 4, "lreal": 8, "string": 256, "date_and_time": 8}
+                 "ulint": 8, "sint": 1, "int": 2, "dint": 4, "lint": 8,  "real": 4, "lreal": 8, "string": 256, "time": 4, "ltime": 8, "date_and_time": 8}
 
     if type_name in type_size.keys():
         return get_value_(bytearray_, byte_index, type_name, bool_index)
@@ -573,7 +593,8 @@ def get_value(bytearray_, byte_index, item, bool_index):
         array_size = get_array_size(type_split[1][:-1])
 
         if type_split[0] == 'string':
-            string_size = array_size  # + 2
+            string_size = array_size + 2
+            _LOGGER.debug("get_value: string_size: %d", string_size)
             return get_value_(bytearray_, byte_index, 'string', string_size)
 
         if type_split[0] == 'bool':
@@ -624,8 +645,13 @@ def get_value(bytearray_, byte_index, item, bool_index):
             # return json.dumps(a)
 
     if type_split[0] == 'string' and len(type_split) == 3 and "]" == type_name[-1]:
-        string_size = get_array_size(type_split[1][:-1]) + 1
+
+        string_size = get_array_size(type_split[1][:-1]) + 2
+        _LOGGER.debug(
+            "get_value: Array of String: string_size: %d", string_size)
         array_size = get_array_size(type_split[2][:-1])
+        _LOGGER.debug(
+            "get_value: Array of String: array_size: %d", array_size)
 
         _LOGGER.debug("Read String Array: byte_index: %s", str(byte_index))
         _LOGGER.debug("Read String Array: type_size[type_split[0]: %s", str(
@@ -716,7 +742,15 @@ def get_value_(bytearray_, byte_index, type_, bool_index=None, max_size=254):
         return get_byte_(bytearray_, byte_index)
 
     elif type_ == 'char':
-        return chr(get_usint(bytearray_, byte_index))
+        #get_usint(bytearray_, byte_index)
+        #return chr(get_usint(bytearray_, byte_index))
+        return get_char_(bytearray_, byte_index)
+
+    elif type_ == 'time':
+        return get_dint(bytearray_, byte_index)
+
+    elif type_ == 'ltime':
+        return get_lint(bytearray_, byte_index)
 
     elif type_ == 's5time':
         data_s5time = get_s5time(bytearray_, byte_index)
@@ -727,9 +761,9 @@ def get_value_(bytearray_, byte_index, type_, bool_index=None, max_size=254):
         return data_dt
 
     # add these three not implemented data typ to avoid error
-    elif type_ == 'time':
-        _LOGGER.warn('read TIME not implemented')
-        return None
+    #elif type_ == 'time':
+    #    _LOGGER.warn('read TIME not implemented')
+    #    return None
 
     elif type_ == 'date':
         _LOGGER.warn('DATE not implemented')
@@ -744,11 +778,13 @@ def get_value_(bytearray_, byte_index, type_, bool_index=None, max_size=254):
 
 
 def get_array_size(dimension):
+    # [0..7] -> 0, 1, 2, ..., 6, 7 -> array_size = 7 - 0 + 1 = 8
     if m := re.match(r'(\d+)\.\.(\d+)', dimension):
         return int(m.group(2)) - int(m.group(1)) + 1
 
+    # [8] -> 0, 1, 2, ..., 6, 7 -> array_size = 8
     if m := re.match(r'(\d+)', dimension):
-        return int(m.group(1)) + 1
+        return int(m.group(1))
 
     _LOGGER.warn('unsupoortes array dimension or definition, %s',
                  str(dimension))
@@ -778,7 +814,7 @@ def convert_key(key):
 
 def get_type_size_(type_name):
     type_size = {"bool": 1, "byte": 1, "char": 1, "word": 2, "dword": 4, "usint": 1,  "uint": 2, "udint": 4,
-                 "ulint": 8, "sint": 1, "int": 2, "dint": 4, "lint": 8,  "real": 4, "lreal": 8, "string": 256, "date_and_time": 8}
+                 "ulint": 8, "sint": 1, "int": 2, "dint": 4, "lint": 8,  "real": 4, "lreal": 8, "string": 256, "time": 4, "ltime": 8, "date_and_time": 8}
 
     type_name = type_name.strip().lower()
 
@@ -791,7 +827,7 @@ def get_type_size_(type_name):
 
 def get_type_size(item):
     type_size = {"bool": 1, "byte": 1, "char": 1, "word": 2, "dword": 4, "usint": 1,  "uint": 2, "udint": 4,
-                 "ulint": 8, "sint": 1, "int": 2, "dint": 4, "lint": 8,  "real": 4, "lreal": 8, "string": 256, "date_and_time": 8}
+                 "ulint": 8, "sint": 1, "int": 2, "dint": 4, "lint": 8,  "real": 4, "lreal": 8, "string": 256, "time": 4, "ltime": 8, "date_and_time": 8}
 
     type_name = item['type'].strip().lower()
 
@@ -815,7 +851,10 @@ def get_type_size(item):
         array_size = get_array_size(type_split[1][:-1])
 
         if type_split[0] == 'string':
-            return array_size + 2
+            string_size = array_size + 2
+            _LOGGER.debug(
+                "get_type_size: string: string_size: %d", string_size)
+            return string_size
 
         if type_split[0] == 'struct':
             if 'defintion' in item.keys():
@@ -832,8 +871,12 @@ def get_type_size(item):
     if type_split[0] == 'string' and len(type_split) == 3 and "]" == type_name[-1]:
         # +1 because array start with 0
         string_size = get_array_size(type_split[1][:-1]) + 2
+        _LOGGER.debug(
+            "get_type_size: Array of string: string_size: %d", string_size)
         # +1 because array start with 0
         array_size = get_array_size(type_split[2][:-1])
+        _LOGGER.debug(
+            "get_type_size: Array of string: array_size: %d", array_size)
         return array_size * string_size
 
     _LOGGER.warn(
@@ -866,7 +909,7 @@ def get_struct_values(bytearray_, byte_index, defintion):
         type_split = type_name.split('[')
 
         type_size = {"bool": 1, "byte": 1, "char": 1, "word": 2, "dword": 4, "usint": 1,  "uint": 2, "udint": 4,
-                     "ulint": 8, "sint": 1, "int": 2, "dint": 4, "lint": 8,  "real": 4, "lreal": 8, "string": 256, "date_and_time": 8}
+                     "ulint": 8, "sint": 1, "int": 2, "dint": 4, "lint": 8,  "real": 4, "lreal": 8, "string": 256, "time": 4, "ltime": 8, "date_and_time": 8}
 
         if type_name in type_size.keys():
             o[item['name']] = get_value_(
