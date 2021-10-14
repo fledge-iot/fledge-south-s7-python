@@ -191,6 +191,9 @@ _DEFAULT_CONFIG = {
     }
 }
 
+_TYPE_SIZE = {"bool": 1, "byte": 1, "char": 1, "word": 2, "dword": 4, "usint": 1,  "uint": 2, "udint": 4, "ulint": 8,
+              "sint": 1, "int": 2, "dint": 4, "lint": 8,  "real": 4, "lreal": 8, "string": 256, "time": 4, "ltime": 8, "date_and_time": 8}
+
 
 _LOGGER = logger.setup(__name__, level=logging.DEBUG)
 #_LOGGER = logger.setup(__name__, level=logging.WARN)
@@ -572,8 +575,7 @@ def get_value(bytearray_, byte_index, item, bool_index):
 
     type_name = item['type'].strip().lower()
 
-    type_size = {"bool": 1, "byte": 1, "char": 1, "word": 2, "dword": 4, "usint": 1,  "uint": 2, "udint": 4,
-                 "ulint": 8, "sint": 1, "int": 2, "dint": 4, "lint": 8,  "real": 4, "lreal": 8, "string": 256, "time": 4, "ltime": 8, "date_and_time": 8}
+    type_size = _TYPE_SIZE
 
     if type_name in type_size.keys():
         return get_value_(bytearray_, byte_index, type_name, bool_index)
@@ -790,16 +792,25 @@ def get_array_size(dimension):
     raise ValueError
 
 
-def get_struct_size(defintion):
-    s = sorted(defintion, key=lambda t: convert_key(t[0]))
+def get_struct_size(definition):
+    _LOGGER.debug("definition: %s", str(definition))
+    #s = sorted(definition, key=lambda t: convert_key(t[0]))
+    s = {int(float(k)): v for k, v in definition.items()}
 
-    if (convert_key(min(s)) != 0):
+    _LOGGER.debug("definition sorted: %s", str(s))
+
+    if (min(s) != 0):
         _LOGGER.warn(
-            'Struct data type does not contain dict key "0.0",  %s', str(defintion))
+            'Struct data type does not contain dict key "0.0",  %s', str(definition))
         raise ValueError
 
+    _LOGGER.debug("definition max type: %s", str(s[max(s)]["type"]))
+    _LOGGER.debug("max s: %s", str(max(s)))
+    _LOGGER.debug("definition max type: %s", str(
+        get_type_size_struct(s[max(s)]["type"])))
+
     try:
-        return convert_key(max(s)) + get_type_size_struct(defintion[max(s)]["type"])
+        return max(s) + get_type_size_struct(s[max(s)]["type"])
     except:
         raise ValueError
 
@@ -812,18 +823,19 @@ def convert_key(key):
 
 
 def get_type_size_struct(type_name):
-    type_size = {"bool": 1, "byte": 1, "char": 1, "word": 2, "dword": 4, "usint": 1,  "uint": 2, "udint": 4,
-                 "ulint": 8, "sint": 1, "int": 2, "dint": 4, "lint": 8,  "real": 4, "lreal": 8, "string": 256, "time": 4, "ltime": 8, "date_and_time": 8}
+
+    _LOGGER.debug("get_type_size_struct")
+    type_size = _TYPE_SIZE
 
     type_name = type_name.strip().lower()
 
     if type_name in type_size.keys():
         return type_size[type_name]
 
-    if 'offset' in item.keys():
-        offset = int(item['offset'])
-    else:
-        offset = 0
+    #if 'offset' in item.keys():
+    #    offset = int(item['offset'])
+    #else:
+    offset = 0
 
     type_split = type_name.split('[')
     if len(type_split) == 2 and "]" == type_name[-1]:
@@ -872,18 +884,12 @@ def get_type_size_struct(type_name):
         'data type is not supported or does not exist,  %s', str(type_name))
     raise ValueError
 
-
-
-
-
     _LOGGER.warn('Unkown type %s', str(type_name))
     raise ValueError
 
 
 def get_type_size(item):
-    type_size = {"bool": 1, "byte": 1, "char": 1, "word": 2, "dword": 4, "usint": 1,  "uint": 2, "udint": 4,
-                 "ulint": 8, "sint": 1, "int": 2, "dint": 4, "lint": 8,  "real": 4, "lreal": 8, "string": 256, "time": 4, "ltime": 8, "date_and_time": 8}
-
+    type_size = _TYPE_SIZE
     type_name = item['type'].strip().lower()
 
     if type_name in type_size.keys():
@@ -964,8 +970,7 @@ def get_struct_values(bytearray_, byte_index, defintion):
         type_name = item['type'].strip().lower()
         type_split = type_name.split('[')
 
-        type_size = {"bool": 1, "byte": 1, "char": 1, "word": 2, "dword": 4, "usint": 1,  "uint": 2, "udint": 4,
-                     "ulint": 8, "sint": 1, "int": 2, "dint": 4, "lint": 8,  "real": 4, "lreal": 8, "string": 256, "time": 4, "ltime": 8, "date_and_time": 8}
+        type_size = _TYPE_SIZE
 
         if type_name in type_size.keys():
             o[item['name']] = get_value_(
@@ -976,7 +981,7 @@ def get_struct_values(bytearray_, byte_index, defintion):
 
             if type_split[0] == 'string':
                 o[item['name']] = get_value_(
-                    bytearray_, byte_index + struct_byte_index, type_name, bool_index, array_size)
+                    bytearray_, byte_index + struct_byte_index, type_split[0], bool_index, array_size)
 
             elif type_split[0] == 'bool':
                 a = []
