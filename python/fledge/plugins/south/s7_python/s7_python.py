@@ -195,8 +195,8 @@ _TYPE_SIZE = {"bool": 1, "byte": 1, "char": 1, "word": 2, "dword": 4, "usint": 1
               "sint": 1, "int": 2, "dint": 4, "lint": 8,  "real": 4, "lreal": 8, "string": 256, "time": 4, "ltime": 8, "date_and_time": 8}
 
 
-_LOGGER = logger.setup(__name__, level=logging.DEBUG)
-#_LOGGER = logger.setup(__name__, level=logging.WARN)
+#_LOGGER = logger.setup(__name__, level=logging.DEBUG)
+_LOGGER = logger.setup(__name__, level=logging.WARN)
 """ Setup the access to the logging system of Fledge """
 
 UNIT = 0x0
