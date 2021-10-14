@@ -799,7 +799,7 @@ def get_struct_size(defintion):
         raise ValueError
 
     try:
-        return convert_key(max(s)) + get_type_size_(defintion[max(s)]["type"])
+        return convert_key(max(s)) + get_type_size_struct(defintion[max(s)]["type"])
     except:
         raise ValueError
 
@@ -811,7 +811,7 @@ def convert_key(key):
         return key
 
 
-def get_type_size_(type_name):
+def get_type_size_struct(type_name):
     type_size = {"bool": 1, "byte": 1, "char": 1, "word": 2, "dword": 4, "usint": 1,  "uint": 2, "udint": 4,
                  "ulint": 8, "sint": 1, "int": 2, "dint": 4, "lint": 8,  "real": 4, "lreal": 8, "string": 256, "time": 4, "ltime": 8, "date_and_time": 8}
 
@@ -819,6 +819,62 @@ def get_type_size_(type_name):
 
     if type_name in type_size.keys():
         return type_size[type_name]
+
+    if 'offset' in item.keys():
+        offset = int(item['offset'])
+    else:
+        offset = 0
+
+    type_split = type_name.split('[')
+    if len(type_split) == 2 and "]" == type_name[-1]:
+        array_size = get_array_size(type_split[1][:-1])
+
+        if type_split[0] == 'string':
+            # add 2 for S7 String Type
+            string_size = array_size + 2 + offset
+            _LOGGER.debug(
+                "get_type_size: string: string_size: %d", string_size)
+            return string_size
+
+        # FIXME: no support for struct of struct now
+        if type_split[0] == 'struct':
+            _LOGGER.warn(
+                'data type struct is not supported in structs,  %s', str(type_name))
+            raise ValueError
+            # if 'defintion' in item.keys():
+            #     return (get_struct_size(item['defintion']) + offset) * array_size
+            # else:
+            #     raise ValueError
+
+        if type_split[0] == 'bool':
+            _LOGGER.warn(
+                'data type array of bools is not supported in structs,  %s', str(type_name))
+            raise ValueError
+            # return math.ceil(array_size/8)
+
+        if type_split[0] in type_size.keys():
+            return (type_size[type_split[0]] + offset) * array_size
+
+    # no support for array of string
+    if type_split[0] == 'string' and len(type_split) == 3 and "]" == type_name[-1]:
+        _LOGGER.warn(
+            'data type array of strings is not supported in structs,  %s', str(type_name))
+        # add 2 for S7 String Type
+        #string_size = get_array_size(type_split[1][:-1]) + 2
+        #_LOGGER.debug(
+        #    "get_type_size: Array of string: string_size: %d", string_size)
+        #array_size = get_array_size(type_split[2][:-1])
+        #_LOGGER.debug(
+        #    "get_type_size: Array of string: array_size: %d", array_size)
+        #return array_size * string_size
+
+    _LOGGER.warn(
+        'data type is not supported or does not exist,  %s', str(type_name))
+    raise ValueError
+
+
+
+
 
     _LOGGER.warn('Unkown type %s', str(type_name))
     raise ValueError
