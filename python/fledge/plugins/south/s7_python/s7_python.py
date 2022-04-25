@@ -780,14 +780,16 @@ def get_value_(bytearray_, byte_index, type_, bool_index=None, max_size=254):
 
 def get_array_size(dimension):
     # [0..7] -> 0, 1, 2, ..., 6, 7 -> array_size = 7 - 0 + 1 = 8
-    if m := re.match(r'(\d+)\.\.(\d+)', dimension):
+    m = re.match(r'(\d+)\.\.(\d+)', dimension)
+    if m:
         return int(m.group(2)) - int(m.group(1)) + 1
 
     # [8] -> 0, 1, 2, ..., 6, 7 -> array_size = 8
-    if m := re.match(r'(\d+)', dimension):
+    m = re.match(r'(\d+)', dimension)
+    if m:
         return int(m.group(1))
 
-    _LOGGER.warn('unsupoortes array dimension or definition, %s',
+    _LOGGER.warn('unsupported array dimension or definition, %s',
                  str(dimension))
     raise ValueError
 
