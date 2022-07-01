@@ -7,7 +7,7 @@ node("ubuntu18-agent") {
     stage("Run tests"){
         echo "Running tests..."
         sh "sudo ./requirements.sh"
-        sh "export FLEDGE_ROOT=\$(pwd)/fledge; export PYTHONPATH=\$(FLEDGE_ROOT)/python; cd tests; python3 -m pytest"
+        sh "export FLEDGE_ROOT=\$(pwd)/fledge; export PYTHONPATH=\${FLEDGE_ROOT}/python; cd tests; python3 -m pytest"
         echo "Tests completed."
    }
 }
