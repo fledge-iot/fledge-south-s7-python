@@ -1,6 +1,7 @@
 node("ubuntu18-agent") {
     stage("Prerequisites"){
         sh "rm -rf fledge; git clone https://github.com/fledge-iot/fledge"
+        sh "cd fledge; git log -n 1;"
     }
     checkout scm
     stage("Run tests"){
