@@ -18,7 +18,7 @@ class TestS7:
         plugin_info = s7.plugin_info()
         assert plugin_info == {
             'name': 's7_south_python',
-            'version': '2.0.0',
+            'version': '2.0.1',
             'mode': 'poll',
             'type': 'south',
             'interface': '1.0',
