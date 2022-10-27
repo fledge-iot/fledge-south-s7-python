@@ -46,7 +46,7 @@ elif apt --version 2>/dev/null; then
 	sudo apt install -y wget
 	sudo apt install -y p7zip
 	wget --content-disposition -c https://sourceforge.net/projects/snap7/files/1.4.2/snap7-full-1.4.2.7z/download
-	p7zip -d snap7-full-1.4.2.7z
+	echo "A" | p7zip -d snap7-full-1.4.2.7z
 	cd snap7-full-1.4.2/build/unix
 	make -f "$(uname -m)_linux.mk" install	
 else
