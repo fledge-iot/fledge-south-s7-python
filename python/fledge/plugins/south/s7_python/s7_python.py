@@ -279,7 +279,7 @@ def plugin_poll(handle):
                 return
 
         unit_id = UNIT
-        s7_map = json.loads(handle['map']['value'])
+        s7_map = handle['map']['value']
 
         db = s7_map['DB']
 
