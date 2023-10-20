@@ -216,7 +216,7 @@ def plugin_info():
 
     return {
         'name': 's7_south_python',
-        'version': '2.1.0',
+        'version': '2.2.0',
         'mode': 'poll',
         'type': 'south',
         'interface': '1.0',
@@ -279,7 +279,7 @@ def plugin_poll(handle):
                 return
 
         unit_id = UNIT
-        s7_map = json.loads(handle['map']['value'])
+        s7_map = handle['map']['value']
 
         db = s7_map['DB']
 
