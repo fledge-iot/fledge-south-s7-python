@@ -216,7 +216,7 @@ def plugin_info():
 
     return {
         'name': 's7_south_python',
-        'version': '2.4.0',
+        'version': '2.5.0',
         'mode': 'poll',
         'type': 'south',
         'interface': '1.0',
