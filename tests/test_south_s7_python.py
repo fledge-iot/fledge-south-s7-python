@@ -7,9 +7,8 @@ __license__ = "Apache 2.0"
 __version__ = "${VERSION}"
 
 
-import pytest
-
 from python.fledge.plugins.south.s7_python import s7_python as s7
+
 
 class TestS7:
 

@@ -27,13 +27,15 @@ os_version=`(grep -o '^VERSION_ID=.*' /etc/os-release | cut -f2 -d\" | sed 's/"/
 echo "Platform is ${os_name}, Version: ${os_version}"
 
 echo Installing requirements
+snap7_version="1.4.2"
+snap7_full_version="snap7-full-1.4.2.7z"
 if [[ ( $os_name == *"Red Hat"* || $os_name == *"CentOS"* ) &&  $os_version == *"7"* ]]; then
 	sudo yum install -y wget
 	# TODO never tested
 	sudo yum install -y p7zip
-	wget --content-disposition -c https://sourceforge.net/projects/snap7/files/1.4.2/snap7-full-1.4.2.7z/download
-	p7zip -d snap7-full-1.4.2.7z
-	cd snap7-full-1.4.2/build/unix
+	wget --content-disposition -c -O $snap7_full_version "https://sourceforge.net/projects/snap7/files/$snap7_version/$snap7_full_version/download"
+	echo "A" | p7zip -d $snap7_full_version
+	cd "${snap7_full_version%.7z}/build/unix"
 	# TODO if 64bit  
 	make -f "$(uname -m)_linux.mk" install	LibInstall=/usr/lib64
 	
@@ -45,9 +47,9 @@ elif apt --version 2>/dev/null; then
 	
 	sudo apt install -y wget
 	sudo apt install -y p7zip
-	wget --content-disposition -c https://sourceforge.net/projects/snap7/files/1.4.2/snap7-full-1.4.2.7z/download
-	echo "A" | p7zip -d snap7-full-1.4.2.7z
-	cd snap7-full-1.4.2/build/unix
+	wget --content-disposition -c -O $snap7_full_version "https://sourceforge.net/projects/snap7/files/$snap7_version/$snap7_full_version/download"
+	echo "A" | p7zip -d $snap7_full_version
+	cd "${snap7_full_version%.7z}/build/unix"
 	make -f "$(uname -m)_linux.mk" install	
 else
 	echo "Requirements cannot be automatically installed, please refer README.rst to install requirements manually"
